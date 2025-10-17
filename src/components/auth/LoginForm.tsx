@@ -1,5 +1,4 @@
-import { useState } from "react"
-import { useKV } from "@github/spark/hooks"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +19,19 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [users] = useKV<any[]>("registered-users", [])
+  const [users, setUsers] = useState<any[]>([])
+
+  // Load users from localStorage
+  useEffect(() => {
+    try {
+      const storedUsers = localStorage.getItem('registered-users')
+      if (storedUsers) {
+        setUsers(JSON.parse(storedUsers))
+      }
+    } catch (error) {
+      console.error('Error loading users:', error)
+    }
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,19 +45,25 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
       const user = users?.find((u: any) => u.email === email && u.password === password)
 
       if (user) {
-        toast.success("🎉 Pomyślnie zalogowano!")
+        // Login with existing user from storage
+        const successMessage = user.accountType === 'business' 
+          ? "� Witaj w panelu biznesowym!" 
+          : "�🎉 Pomyślnie zalogowano!"
+        toast.success(successMessage)
         onLogin(user)
       } else {
-        // Demo users for testing
+        // Demo users for testing - detect account type from email
+        const isBusiness = email.includes('business') || email.includes('firma') || email.includes('admin') || email.includes('biznes')
+        
         const demoUser = {
           id: Date.now().toString(),
           name: email.split('@')[0],
           email,
-          accountType: email.includes('business') || email.includes('firma') || email.includes('admin') ? 'business' : 'user',
+          accountType: isBusiness ? 'business' : 'user',
           profileImage: '',
           createdAt: new Date().toISOString(),
           // Add business specific fields if it's a business account
-          ...(email.includes('business') || email.includes('firma') || email.includes('admin') ? {
+          ...(isBusiness ? {
             businessName: email.split('@')[0] + " Business",
             category: "Usługi",
             isVerified: true,
@@ -54,7 +71,10 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
           } : {})
         }
         
-        toast.success("✨ Witaj w premium doświadczeniu!")
+        const successMessage = isBusiness 
+          ? "✨ Witaj w premium panelu biznesowym!" 
+          : "✨ Witaj w premium doświadczeniu!"
+        toast.success(successMessage)
         onLogin(demoUser)
       }
     } catch (error) {
@@ -238,13 +258,13 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
         <p className="text-slate-700 text-sm font-medium mb-2">💡 Demo Mode</p>
         <div className="space-y-2">
           <p className="text-slate-500 text-xs leading-relaxed">
-            <strong className="text-blue-400">Konto użytkownika:</strong> dowolny email (np. user@test.com)
+            <strong className="text-blue-600">Konto użytkownika:</strong> dowolny email (np. user@test.com)
           </p>
           <p className="text-slate-500 text-xs leading-relaxed">
-            <strong className="text-purple-400">Konto biznesowe:</strong> email z "business", "firma" lub "admin" (np. firma@test.com)
+            <strong className="text-blue-600">Konto biznesowe:</strong> email z "business", "firma", "biznes" lub "admin" (np. firma@test.com)
           </p>
           <p className="text-slate-500 text-xs leading-relaxed">
-            Hasło: dowolne
+            Hasło: dowolne (w trybie demo)
           </p>
         </div>
       </motion.div>

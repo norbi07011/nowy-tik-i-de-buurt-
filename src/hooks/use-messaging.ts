@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from "@/hooks/use-local-storage"
 import { Conversation, Message, User } from '@/types'
 import { apiService } from '@/services/api'
 import { toast } from 'sonner'

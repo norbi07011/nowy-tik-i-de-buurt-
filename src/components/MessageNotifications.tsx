@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ChatCircle, Bell } from "@phosphor-icons/react"
-import { useKV } from '@github/spark/hooks'
+import { useKV } from "@/hooks/use-local-storage"
 import { useAuth } from "@/contexts/AppContext"
 
 export function MessageNotificationBadge() {

@@ -1,5 +1,4 @@
-import { useState } from "react"
-import { useKV } from "@github/spark/hooks"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,7 +29,19 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [users, setUsers] = useKV<any[]>("registered-users", [])
+  const [users, setUsers] = useState<any[]>([])
+
+  // Load users from localStorage
+  useEffect(() => {
+    try {
+      const storedUsers = localStorage.getItem('registered-users')
+      if (storedUsers) {
+        setUsers(JSON.parse(storedUsers))
+      }
+    } catch (error) {
+      console.error('Error loading users:', error)
+    }
+  }, [])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -81,8 +92,9 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
         createdAt: new Date().toISOString()
       }
 
-      // Save to storage
+      // Save to localStorage
       const updatedUsers = [...(users || []), newBusiness]
+      localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
       setUsers(updatedUsers)
 
       toast.success("🎉 Konto biznesowe zostało utworzone! Witaj w premium społeczności biznesowej!")

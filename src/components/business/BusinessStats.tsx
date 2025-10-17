@@ -1,4 +1,4 @@
-import { useKV } from "@github/spark/hooks"
+import { useKV } from "@/hooks/use-local-storage"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts"
 import { TrendingUp, Users, Eye, MessageSquare, Star, Calendar, TrendingDown, Target } from "lucide-react"

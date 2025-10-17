@@ -1,4 +1,4 @@
-import { useKV } from "@github/spark/hooks"
+import { useKV } from "@/hooks/use-local-storage"
 import { PostCard } from "@/components/PostCard"
 import { BusinessPost } from "@/types/business"
 import { generateMockPosts } from "@/lib/mockData"

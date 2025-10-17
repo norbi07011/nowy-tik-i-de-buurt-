@@ -1,4 +1,4 @@
-import { useKV } from "@github/spark/hooks"
+import { useKV } from "@/hooks/use-local-storage"
 import { BusinessProfile } from "@/types"
 
 export function useSampleBusinesses() {

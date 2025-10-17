@@ -1,4 +1,4 @@
-import { useKV } from "@github/spark/hooks"
+import { useKV } from "@/hooks/use-local-storage"
 
 export type Language = 'nl' | 'en' | 'pl'
 

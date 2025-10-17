@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useKV } from "@github/spark/hooks"
+import { useKV } from "@/hooks/use-local-storage"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

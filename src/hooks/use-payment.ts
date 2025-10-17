@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from "@/hooks/use-local-storage"
 import { toast } from 'sonner'
 import { 
   PaymentIntent, 

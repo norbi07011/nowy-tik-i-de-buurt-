@@ -22,7 +22,7 @@ import {
 import { format, isToday, isYesterday } from "date-fns"
 import { nl } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { useKV } from '@github/spark/hooks'
+import { useKV } from "@/hooks/use-local-storage"
 import { toast } from 'sonner'
 
 interface Message {

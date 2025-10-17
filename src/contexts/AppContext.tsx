@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, ReactNode } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from "@/hooks/use-local-storage"
 import { User, BusinessProfile, Analytics, UserSubscription } from '@/types'
 import { apiService } from '@/services/api'
 import { toast } from 'sonner'
