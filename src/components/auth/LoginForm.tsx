@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { Building, User, Eye, EyeSlash, Envelope, Lock } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
+import { supabase } from "@/lib/supabase"
 
 interface LoginFormProps {
   onLogin: (user: any) => void
