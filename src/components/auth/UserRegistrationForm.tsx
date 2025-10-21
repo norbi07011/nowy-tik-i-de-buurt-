@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { User, Eye, EyeSlash, Envelope, Lock, UserCircle, Calendar } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
+import { signUp } from "@/lib/auth"
 
 interface UserRegistrationFormProps {
   onRegister: (user: any) => void
@@ -84,33 +85,22 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
         return
       }
 
-      console.log('✅ Walidacja przeszła, tworzenie użytkownika...')
+      console.log('✅ Walidacja przeszła, tworzenie użytkownika w Supabase...')
 
-      // Simulate premium registration process
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const result = await signUp(
+        formData.email,
+        formData.password,
+        formData.name,
+        'user'
+      )
 
-      const newUser = {
-        id: Date.now().toString(),
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        age: formData.age,
-        interests: formData.interests,
-        accountType: 'user',
-        profileImage: '',
-        createdAt: new Date().toISOString(),
-        isPremium: true
+      if (result) {
+        console.log('👤 Użytkownik utworzony w Supabase:', result)
+        toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
+        onRegister(result)
+      } else {
+        toast.error("Błąd podczas tworzenia konta")
       }
-
-      console.log('👤 Nowy użytkownik utworzony:', newUser)
-
-      // Save to localStorage
-      const updatedUsers = [...(users || []), newUser]
-      localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
-      setUsers(updatedUsers)
-
-      toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
-      onRegister(newUser)
     } catch (error) {
       console.error('❌ Błąd podczas rejestracji:', error)
       toast.error("Błąd podczas rejestracji")
