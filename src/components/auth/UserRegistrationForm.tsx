@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { User, Eye, EyeSlash, Envelope, Lock, UserCircle, Calendar } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
-import { supabase } from "@/lib/supabase"
+import { signUp } from "@/lib/auth"
 
 interface UserRegistrationFormProps {
   onRegister: (user: any) => void
@@ -29,19 +29,6 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [users, setUsers] = useState<any[]>([])
-
-  // Load users from localStorage
-  useEffect(() => {
-    try {
-      const storedUsers = localStorage.getItem('registered-users')
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers))
-      }
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
-  }, [])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -82,78 +69,22 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
 
       console.log('✅ Walidacja przeszła, tworzenie użytkownika w Supabase...')
 
-      // 1. Utwórz konto w Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      })
+      const fullName = `${formData.firstName} ${formData.lastName}`
+      const user = await signUp(
+        formData.email,
+        formData.password,
+        fullName,
+        'user'
+      )
 
-      if (authError) {
-        console.error('❌ Błąd Auth:', authError)
-        toast.error(`Błąd tworzenia konta: ${authError.message}`)
+      if (!user) {
         setIsLoading(false)
         return
       }
 
-      if (!authData.user) {
-        toast.error("Nie udało się utworzyć konta")
-        setIsLoading(false)
-        return
-      }
-
-      console.log('✅ Konto Auth utworzone:', authData.user.id)
-
-      // 2. Zapisz profil użytkownika do tabeli profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            email: formData.email,
-            name: `${formData.firstName} ${formData.lastName}`,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            age: parseInt(formData.age),
-            phone: formData.phone || null,
-            city: formData.city || null,
-            account_type: 'user',
-            created_at: new Date().toISOString()
-          }
-        ])
-
-      if (profileError) {
-        console.error('❌ Błąd profilu:', profileError)
-        toast.error(`Błąd zapisu profilu: ${profileError.message}`)
-        setIsLoading(false)
-        return
-      }
-
-      console.log('✅ Profil zapisany w Supabase')
-
-      // 3. Przygotuj dane użytkownika
-      const newUser = {
-        id: authData.user.id,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        age: parseInt(formData.age),
-        interests: formData.interests || 'Ogólne',
-        phone: formData.phone || '',
-        city: formData.city || '',
-        accountType: 'user',
-        createdAt: new Date().toISOString()
-      }
-
-      // 4. Zapisz również w localStorage (backup)
-      const storedUsers = localStorage.getItem('registered-users')
-      const users = storedUsers ? JSON.parse(storedUsers) : []
-      users.push(newUser)
-      localStorage.setItem('registered-users', JSON.stringify(users))
-
-      console.log('👤 Użytkownik utworzony w Supabase i localStorage:', newUser)
+      console.log('👤 Użytkownik utworzony w Supabase:', user)
       toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
-      onRegister(newUser)
+      onRegister(user)
     } catch (error) {
       console.error('❌ Błąd podczas rejestracji:', error)
       toast.error("Błąd podczas rejestracji")

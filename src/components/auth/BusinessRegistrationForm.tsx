@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { Building, Eye, EyeSlash, Envelope, Lock, MapPin, Phone, Globe } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
-import { supabase } from "@/lib/supabase"
+import { signUp } from "@/lib/auth"
 
 interface BusinessRegistrationFormProps {
   onRegister: (business: any) => void
@@ -30,19 +30,6 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [users, setUsers] = useState<any[]>([])
-
-  // Load users from localStorage
-  useEffect(() => {
-    try {
-      const storedUsers = localStorage.getItem('registered-users')
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers))
-      }
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
-  }, [])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -81,96 +68,30 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
 
       console.log('✅ Walidacja przeszła, tworzenie konta biznesowego w Supabase...')
 
-      // 1. Utwórz konto w Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      })
+      const user = await signUp(
+        formData.email,
+        formData.password,
+        formData.businessName,
+        'business',
+        {
+          businessName: formData.businessName,
+          ownerName: formData.ownerName,
+          phone: formData.phone,
+          address: formData.address,
+          category: formData.category,
+          description: formData.description,
+          website: formData.website
+        }
+      )
 
-      if (authError) {
-        console.error('❌ Błąd Auth:', authError)
-        toast.error(`Błąd tworzenia konta: ${authError.message}`)
+      if (!user) {
         setIsLoading(false)
         return
       }
 
-      if (!authData.user) {
-        toast.error("Nie udało się utworzyć konta")
-        setIsLoading(false)
-        return
-      }
-
-      console.log('✅ Konto Auth utworzone:', authData.user.id)
-
-      // 2. Zapisz profil biznesowy do tabeli business_profiles
-      const { error: profileError } = await supabase
-        .from('business_profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            email: formData.email,
-            business_name: formData.businessName,
-            owner_name: formData.ownerName,
-            phone: formData.phone,
-            address: formData.address,
-            category: formData.category || null,
-            description: formData.description || null,
-            website: formData.website || null,
-            created_at: new Date().toISOString()
-          }
-        ])
-
-      if (profileError) {
-        console.error('❌ Błąd profilu biznesowego:', profileError)
-        toast.error(`Błąd zapisu profilu: ${profileError.message}`)
-        setIsLoading(false)
-        return
-      }
-
-      console.log('✅ Profil biznesowy zapisany w Supabase')
-
-      // 3. Zapisz również w tabeli profiles z account_type='business'
-      const { error: profilesError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            email: formData.email,
-            name: formData.businessName,
-            account_type: 'business',
-            created_at: new Date().toISOString()
-          }
-        ])
-
-      if (profilesError) {
-        console.error('⚠️ Błąd zapisu do profiles:', profilesError)
-      }
-
-      // 4. Przygotuj dane biznesu
-      const newBusiness = {
-        id: authData.user.id,
-        businessName: formData.businessName,
-        ownerName: formData.ownerName,
-        name: formData.businessName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        category: formData.category,
-        description: formData.description || '',
-        website: formData.website || '',
-        accountType: 'business',
-        createdAt: new Date().toISOString()
-      }
-
-      // 5. Zapisz również w localStorage (backup)
-      const storedUsers = localStorage.getItem('registered-users')
-      const users = storedUsers ? JSON.parse(storedUsers) : []
-      users.push(newBusiness)
-      localStorage.setItem('registered-users', JSON.stringify(users))
-
-      console.log('🏢 Konto biznesowe utworzone w Supabase i localStorage:', newBusiness)
+      console.log('🏢 Konto biznesowe utworzone w Supabase:', user)
       toast.success("🎉 Konto biznesowe zostało utworzone! Witaj w premium społeczności biznesowej!")
-      onRegister(newBusiness)
+      onRegister(user)
     } catch (error) {
       console.error('❌ Błąd podczas rejestracji biznesowej:', error)
       toast.error("Błąd podczas rejestracji")
