@@ -60,98 +60,8 @@ export function SearchView() {
   const [searchHistory, setSearchHistory] = useKV<string[]>("search-history", [])
   const [favorites, setFavorites] = useKV<string[]>("search-favorites", [])
 
-  // Mock data for demonstration
-  const mockResults: SearchResult[] = [
-    {
-      id: "1",
-      type: "business",
-      title: "Café Amsterdam Centrum",
-      description: "Gezellig café in het hart van Amsterdam met verse koffie en huisgemaakte taarten",
-      imageUrl: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&h=200&fit=crop",
-      location: "Damrak 123, 1012 LP Amsterdam",
-      city: "Amsterdam",
-      province: "Noord-Holland",
-      category: "Restaurant",
-      rating: 4.7,
-      reviews: 234,
-      tags: ["koffie", "taarten", "gezellig", "centrum"],
-      featured: true,
-      phone: "+31 20 123 4567",
-      email: "info@cafeamsterdam.nl",
-      liked: false,
-      saved: false
-    },
-    {
-      id: "2", 
-      type: "discount",
-      title: "35% korting op alle pizza's",
-      description: "Traditionele Italiaanse pizza's gebakken in houtoven. Verse ingrediënten uit Italië.",
-      imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&h=200&fit=crop",
-      location: "Grote Markt 45, 3512 GC Utrecht",
-      city: "Utrecht", 
-      province: "Utrecht",
-      category: "Restaurant",
-      businessName: "Pizzeria Italiana",
-      price: 18,
-      discountPrice: 12,
-      discountPercentage: 35,
-      tags: ["pizza", "italiaans", "korting", "houtoven"],
-      featured: false,
-      phone: "+31 30 234 5678",
-      liked: true,
-      saved: false
-    },
-    {
-      id: "3",
-      type: "photo",
-      title: "Rotterdam Skyline bij Zonsondergang",
-      description: "Prachtige skyline foto van Rotterdam vanaf de Erasmusbrug tijdens de golden hour",
-      imageUrl: "https://images.unsplash.com/photo-1549834125-82d3c48159a3?w=300&h=200&fit=crop",
-      location: "Erasmusbrug, Rotterdam",
-      city: "Rotterdam",
-      province: "Zuid-Holland",
-      category: "Fotografie",
-      businessName: "Rotterdam Photography",
-      tags: ["skyline", "rotterdam", "fotografie", "zonsondergang"],
-      featured: true,
-      liked: false,
-      saved: true
-    },
-    {
-      id: "4",
-      type: "video",
-      title: "Tulpenvelden Keukenhof 2024",
-      description: "4K video tour door de beroemde tulpenvelden van de Keukenhof tijdens het bloeimoment",
-      imageUrl: "https://images.unsplash.com/photo-1520637736862-4d197d17c7a4?w=300&h=200&fit=crop",
-      location: "Keukenhof, Lisse",
-      city: "Lisse",
-      province: "Zuid-Holland", 
-      category: "Natuur",
-      businessName: "Netherlands Nature Films",
-      tags: ["tulpen", "keukenhof", "natuur", "lente"],
-      featured: true,
-      liked: false,
-      saved: false
-    },
-    {
-      id: "5",
-      type: "business",
-      title: "Bike Rental Amsterdam",
-      description: "Verhuur van traditionele Nederlandse fietsen. Dagelijkse en wekelijkse tarieven beschikbaar.",
-      imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop",
-      location: "Centraal Station 12, 1012 AB Amsterdam",
-      city: "Amsterdam",
-      province: "Noord-Holland",
-      category: "Verhuur",
-      rating: 4.5,
-      reviews: 156,
-      tags: ["fietsen", "verhuur", "toerisme", "amsterdam"],
-      featured: false,
-      phone: "+31 20 789 0123",
-      liked: false,
-      saved: true
-    }
-  ]
+  // No mock data - will load from API/Supabase
+  const mockResults: SearchResult[] = []
 
   const categories = ["all", "Restaurant", "Verhuur", "Fotografie", "Natuur", "Wellness", "Technologie"]
   const locations = ["all", "Amsterdam", "Rotterdam", "Utrecht", "Den Haag", "Lisse"]
@@ -172,7 +82,7 @@ export function SearchView() {
       // Simulate API search delay
       await new Promise(resolve => setTimeout(resolve, 800))
       
-      // Filter mock results based on search criteria
+      // Load real results from Supabase in the future
       const filteredResults = mockResults.filter(result => {
         const matchesSearch = result.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                              result.description.toLowerCase().includes(searchTerm.toLowerCase()) ||

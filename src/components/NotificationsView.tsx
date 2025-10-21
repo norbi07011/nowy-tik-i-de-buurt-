@@ -20,65 +20,8 @@ type Notification = {
   businessName?: string
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "like",
-    title: "New Like",
-    message: "Anna liked your recent post about fresh pastries",
-    time: "2 min ago",
-    read: false,
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=50&h=50&fit=crop&crop=face",
-    businessName: "Utrecht Bakery"
-  },
-  {
-    id: "2", 
-    type: "comment",
-    title: "New Comment",
-    message: "\"Great service! Will definitely come back\" - Marcus",
-    time: "15 min ago",
-    read: false,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
-    businessName: "Café Amsterdam"
-  },
-  {
-    id: "3",
-    type: "follow",
-    title: "New Follower",
-    message: "Sarah started following your business",
-    time: "1 hour ago", 
-    read: true,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
-    businessName: "Rotterdam Flowers"
-  },
-  {
-    id: "4",
-    type: "order",
-    title: "New Order",
-    message: "Order #1234 received - €25.50",
-    time: "2 hours ago",
-    read: true,
-    businessName: "Den Haag Style"
-  },
-  {
-    id: "5",
-    type: "review",
-    title: "New Review",
-    message: "5-star review: \"Excellent quality and fast delivery!\"",
-    time: "3 hours ago",
-    read: true,
-    businessName: "Eindhoven Tech"
-  },
-  {
-    id: "6",
-    type: "promotion",
-    title: "Promotion Update",
-    message: "Your 35% discount campaign is performing well - 12 redemptions today",
-    time: "1 day ago",
-    read: true,
-    businessName: "Groningen Bikes"
-  }
-]
+// No mock notifications - start with empty state
+const mockNotifications: Notification[] = []
 
 const getNotificationIcon = (type: NotificationType) => {
   switch (type) {

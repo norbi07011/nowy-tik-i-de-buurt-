@@ -54,77 +54,12 @@ export function ChatMessagesView() {
   const [showMobileChat, setShowMobileChat] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Initialize with demo data
+  // No demo data - start with empty state
   useEffect(() => {
     if (currentUser && conversations.length === 0) {
-      const demoConversations: Conversation[] = [
-        {
-          id: 'conv-1',
-          participantName: 'Café Central',
-          participantType: 'business',
-          lastMessage: {
-            id: 'msg-1',
-            senderId: 'business-1',
-            senderName: 'Café Central',
-            content: 'Bedankt voor je interesse! We zijn open van 8:00-22:00.',
-            createdAt: new Date().toISOString()
-          },
-          unreadCount: 1,
-          isOnline: true
-        },
-        {
-          id: 'conv-2',
-          participantName: 'Restaurant De Ooievaar',
-          participantType: 'business',
-          lastMessage: {
-            id: 'msg-2',
-            senderId: 'business-2',
-            senderName: 'Restaurant De Ooievaar',
-            content: 'Je reservering voor vanavond is bevestigd!',
-            createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
-          },
-          unreadCount: 0,
-          isOnline: false
-        }
-      ]
-      
-      const demoMessages: Record<string, Message[]> = {
-        'conv-1': [
-          {
-            id: 'msg-1-1',
-            senderId: currentUser.id,
-            senderName: currentUser.name,
-            content: 'Hallo, wat zijn jullie openingstijden?',
-            createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: 'msg-1-2',
-            senderId: 'business-1',
-            senderName: 'Café Central',
-            content: 'Bedankt voor je interesse! We zijn open van 8:00-22:00.',
-            createdAt: new Date().toISOString()
-          }
-        ],
-        'conv-2': [
-          {
-            id: 'msg-2-1',
-            senderId: currentUser.id,
-            senderName: currentUser.name,
-            content: 'Ik wil graag een tafel reserveren voor vanavond.',
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: 'msg-2-2',
-            senderId: 'business-2',
-            senderName: 'Restaurant De Ooievaar',
-            content: 'Je reservering voor vanavond is bevestigd!',
-            createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
-          }
-        ]
-      }
-      
-      setConversations(demoConversations)
-      setMessages(demoMessages)
+      // Load real conversations from API/Supabase here in the future
+      setConversations([])
+      setMessages({})
     }
   }, [currentUser, conversations.length, setConversations, setMessages])
 

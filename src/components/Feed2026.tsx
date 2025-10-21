@@ -3,7 +3,6 @@ import { useKV } from "@/hooks/use-local-storage"
 import { motion, AnimatePresence } from "framer-motion"
 import { PostCard } from "@/components/PostCard"
 import { BusinessPost } from "@/types/business"
-import { generateMockPosts } from "@/lib/mockData"
 import { toast } from "sonner"
 
 const LoadingSpinner = () => (
@@ -123,8 +122,8 @@ export function Feed() {
       try {
         // Simulate loading time for premium experience
         await new Promise(resolve => setTimeout(resolve, 1500))
-        const mockPosts = generateMockPosts(20)
-        setPosts(mockPosts)
+        // No mock posts - will load from Supabase in the future
+        setPosts([])
       } catch (error) {
         console.error("Error loading posts:", error)
         toast.error("Błąd podczas ładowania postów")

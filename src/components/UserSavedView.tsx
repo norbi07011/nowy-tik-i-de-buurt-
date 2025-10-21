@@ -21,7 +21,6 @@ import {
   ArrowRight
 } from "@phosphor-icons/react"
 import { PostCard } from "./PostCard"
-import { generateMockPosts } from "@/lib/mockData"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/hooks/use-translation"
@@ -50,13 +49,13 @@ export function UserSavedView({ user }: UserSavedViewProps) {
   const [userSettings, setUserSettings] = useKV<any>("user-settings", {})
   const [watchedItems, setWatchedItems] = useKV<string[]>("watched-items", [])
   
-  // Mock data for posts
+  // No mock data - will load from Supabase
   const [allPosts, setAllPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const mockPosts = generateMockPosts(30)
-    setAllPosts(mockPosts)
+    // Load real posts from Supabase in the future
+    setAllPosts([])
     setLoading(false)
   }, [])
 
