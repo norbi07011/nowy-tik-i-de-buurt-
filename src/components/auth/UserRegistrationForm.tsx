@@ -15,12 +15,15 @@ interface UserRegistrationFormProps {
 export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegistrationFormProps) {
   const { t } = useTranslation()
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
     age: "",
-    interests: ""
+    interests: "",
+    phone: "",
+    city: ""
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -48,7 +51,7 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
     console.log('🔥 UserRegistrationForm: handleRegister wywołane')
     
     // Sprawdź czy wszystkie wymagane pola są wypełnione
-    if (!formData.name || !formData.email || !formData.password || !formData.age) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.age) {
       toast.error("Proszę wypełnić wszystkie wymagane pola")
       return
     }
@@ -91,13 +94,18 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
 
       const newUser = {
         id: Date.now().toString(),
-        name: formData.name,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
         age: formData.age,
         interests: formData.interests,
+        phone: formData.phone || "",
+        city: formData.city || "",
         accountType: 'user',
         profileImage: '',
+        bio: '',
         createdAt: new Date().toISOString(),
         isPremium: true
       }
@@ -144,34 +152,56 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
         <p className="text-slate-600">Stwórz swoje premium konto użytkownika</p>
       </motion.div>
 
-      {/* Name Field */}
-      <motion.div 
-        className="space-y-2"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Label htmlFor="name" className="text-slate-800 font-medium">
-          Imię i nazwisko
-        </Label>
-        <div className="relative">
-          <motion.div
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500"
-            whileHover={{ scale: 1.1 }}
-          >
-            <User className="w-5 h-5" />
-          </motion.div>
+      {/* Name Fields */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Label htmlFor="firstName" className="text-slate-800 font-medium">
+            Imię
+          </Label>
+          <div className="relative">
+            <motion.div
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500"
+              whileHover={{ scale: 1.1 }}
+            >
+              <User className="w-5 h-5" />
+            </motion.div>
+            <Input
+              id="firstName"
+              type="text"
+              value={formData.firstName}
+              onChange={(e) => handleInputChange("firstName", e.target.value)}
+              className="pl-12 bg-white/10 border-white/20 text-slate-800 placeholder:text-slate-800/50 focus:border-blue-500/50 focus:ring-blue-500/20 rounded-2xl h-12 transition-all duration-300"
+              placeholder="Jan"
+              required
+            />
+          </div>
+        </motion.div>
+
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Label htmlFor="lastName" className="text-slate-800 font-medium">
+            Nazwisko
+          </Label>
           <Input
-            id="name"
+            id="lastName"
             type="text"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-            className="pl-12 bg-white/10 border-white/20 text-slate-800 placeholder:text-slate-800/50 focus:border-blue-500/50 focus:ring-blue-500/20 rounded-2xl h-12 transition-all duration-300"
-            placeholder="Jan Kowalski"
+            value={formData.lastName}
+            onChange={(e) => handleInputChange("lastName", e.target.value)}
+            className="bg-white/10 border-white/20 text-slate-800 placeholder:text-slate-800/50 focus:border-blue-500/50 focus:ring-blue-500/20 rounded-2xl h-12 transition-all duration-300"
+            placeholder="Kowalski"
             required
           />
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Email Field */}
       <motion.div 
@@ -307,6 +337,47 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
               {showConfirmPassword ? <EyeSlash className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </motion.button>
           </div>
+        </motion.div>
+      </div>
+
+      {/* Phone & City Fields */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.65 }}
+        >
+          <Label htmlFor="phone" className="text-slate-800 font-medium">
+            Telefon (opcjonalnie)
+          </Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => handleInputChange("phone", e.target.value)}
+            className="bg-white/10 border-white/20 text-slate-800 placeholder:text-slate-800/50 focus:border-blue-500/50 focus:ring-blue-500/20 rounded-2xl h-12 transition-all duration-300"
+            placeholder="+48 123 456 789"
+          />
+        </motion.div>
+
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.68 }}
+        >
+          <Label htmlFor="city" className="text-slate-800 font-medium">
+            Miasto (opcjonalnie)
+          </Label>
+          <Input
+            id="city"
+            type="text"
+            value={formData.city}
+            onChange={(e) => handleInputChange("city", e.target.value)}
+            className="bg-white/10 border-white/20 text-slate-800 placeholder:text-slate-800/50 focus:border-blue-500/50 focus:ring-blue-500/20 rounded-2xl h-12 transition-all duration-300"
+            placeholder="Warszawa"
+          />
         </motion.div>
       </div>
 
