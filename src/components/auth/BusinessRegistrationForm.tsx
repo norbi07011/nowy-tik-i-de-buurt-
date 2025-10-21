@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { Building, Eye, EyeSlash, Envelope, Lock, MapPin, Phone, Globe } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
+import { signUp } from "@/lib/auth"
 
 interface BusinessRegistrationFormProps {
   onRegister: (business: any) => void
@@ -86,41 +87,31 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
         return
       }
 
-      console.log('✅ Walidacja przeszła, tworzenie konta biznesowego...')
+      console.log('✅ Walidacja przeszła, tworzenie konta biznesowego w Supabase...')
 
-      // Simulate premium registration process
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      const result = await signUp(
+        formData.email,
+        formData.password,
+        formData.ownerName,
+        'business',
+        {
+          businessName: formData.businessName,
+          ownerName: formData.ownerName,
+          phone: formData.phone,
+          address: formData.address,
+          category: formData.category,
+          description: formData.description,
+          website: formData.website
+        }
+      )
 
-      const newBusiness = {
-        id: Date.now().toString(),
-        businessName: formData.businessName,
-        ownerName: formData.ownerName,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        address: formData.address,
-        category: formData.category,
-        description: formData.description,
-        website: formData.website,
-        accountType: 'business',
-        profileImage: '',
-        coverImage: '',
-        isVerified: true,
-        isPremium: true,
-        rating: 5.0,
-        reviews: [],
-        createdAt: new Date().toISOString()
+      if (result) {
+        console.log('🏢 Konto biznesowe utworzone w Supabase:', result)
+        toast.success("🎉 Konto biznesowe zostało utworzone! Witaj w premium społeczności biznesowej!")
+        onRegister(result)
+      } else {
+        toast.error("Błąd podczas tworzenia konta biznesowego")
       }
-
-      console.log('🏢 Nowe konto biznesowe utworzone:', newBusiness)
-
-      // Save to localStorage
-      const updatedUsers = [...(users || []), newBusiness]
-      localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
-      setUsers(updatedUsers)
-
-      toast.success("🎉 Konto biznesowe zostało utworzone! Witaj w premium społeczności biznesowej!")
-      onRegister(newBusiness)
     } catch (error) {
       console.error('❌ Błąd podczas rejestracji biznesowej:', error)
       toast.error("Błąd podczas rejestracji")

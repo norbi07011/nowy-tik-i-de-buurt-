@@ -3,6 +3,8 @@ import { useKV } from "@/hooks/use-local-storage"
 import { User, BusinessProfile, Analytics, UserSubscription } from '@/types'
 import { apiService } from '@/services/api'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
+import { getCurrentUser, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 
 interface AppContextType {
   // User state
@@ -49,29 +51,59 @@ export function AppProvider({ children }: AppProviderProps) {
 
   const isAuthenticated = !!currentUser
 
+  // Load user from Supabase on mount
+  useEffect(() => {
+    const loadUser = async () => {
+      console.log('🔄 Loading user from Supabase...')
+      const user = await getCurrentUser()
+      if (user) {
+        console.log('✅ User loaded from Supabase:', user)
+        setCurrentUser(user as any)
+      } else {
+        console.log('ℹ️ No user session found')
+        setCurrentUser(null)
+      }
+    }
+
+    loadUser()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadUser()
+      } else {
+        setCurrentUser(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true)
-      const response = await apiService.login(email, password)
-      
-      if (response.success && response.data) {
-        setCurrentUser(response.data)
-        toast.success('Successfully logged in!')
-        
+      console.log('🔐 Logging in with Supabase...')
+      const user = await authSignIn(email, password)
+
+      if (user) {
+        console.log('✅ Login successful:', user)
+        setCurrentUser(user as any)
+        toast.success('Zalogowano pomyślnie!')
+
         // Load additional data based on user type
-        if (response.data.accountType === 'business') {
+        if (user.accountType === 'business') {
           await loadBusinessProfile()
-          await loadSubscription(response.data.id)
+          await loadSubscription(user.id)
         }
-        
+
         return true
       } else {
-        toast.error(response.error?.message || 'Login failed')
+        toast.error('Nieprawidłowy email lub hasło')
         return false
       }
     } catch (error) {
-      console.error('Login error:', error)
-      toast.error('An error occurred during login')
+      console.error('❌ Login error:', error)
+      toast.error('Błąd podczas logowania')
       return false
     } finally {
       setIsLoading(false)
@@ -81,18 +113,19 @@ export function AppProvider({ children }: AppProviderProps) {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true)
-      await apiService.logout()
-      
+      console.log('🚪 Logging out from Supabase...')
+      await authSignOut()
+
       // Clear all user data
       setCurrentUser(null)
       setBusinessProfile(null)
       setAnalytics(null)
       setSubscription(null)
-      
-      toast.success('Successfully logged out')
+
+      toast.success('Wylogowano pomyślnie')
     } catch (error) {
-      console.error('Logout error:', error)
-      toast.error('An error occurred during logout')
+      console.error('❌ Logout error:', error)
+      toast.error('Błąd podczas wylogowania')
     } finally {
       setIsLoading(false)
     }
