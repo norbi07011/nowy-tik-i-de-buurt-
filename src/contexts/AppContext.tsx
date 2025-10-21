@@ -3,6 +3,8 @@ import { useKV } from "@/hooks/use-local-storage"
 import { User, BusinessProfile, Analytics, UserSubscription } from '@/types'
 import { apiService } from '@/services/api'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
+import { getCurrentUser, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 
 interface AppContextType {
   // User state
@@ -49,26 +51,43 @@ export function AppProvider({ children }: AppProviderProps) {
 
   const isAuthenticated = !!currentUser
 
-  // No Supabase - removed auto-loading on mount
+  // Load user from Supabase on mount
+  useEffect(() => {
+    const loadUser = async () => {
+      console.log('🔄 Loading user from Supabase...')
+      const user = await getCurrentUser()
+      if (user) {
+        console.log('✅ User loaded from Supabase:', user)
+        setCurrentUser(user as any)
+      } else {
+        console.log('ℹ️ No user session found')
+        setCurrentUser(null)
+      }
+    }
+
+    loadUser()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadUser()
+      } else {
+        setCurrentUser(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true)
-      console.log('🔐 Logging in with localStorage...')
-      
-      // Get users from localStorage
-      const storedUsers = localStorage.getItem('registered-users')
-      if (!storedUsers) {
-        toast.error('Nieprawidłowy email lub hasło')
-        return false
-      }
-
-      const users = JSON.parse(storedUsers)
-      const user = users.find((u: any) => u.email === email && u.password === password)
+      console.log('🔐 Logging in with Supabase...')
+      const user = await authSignIn(email, password)
 
       if (user) {
         console.log('✅ Login successful:', user)
-        setCurrentUser(user)
+        setCurrentUser(user as any)
         toast.success('Zalogowano pomyślnie!')
 
         // Load additional data based on user type
@@ -94,7 +113,8 @@ export function AppProvider({ children }: AppProviderProps) {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true)
-      console.log('🚪 Logging out...')
+      console.log('🚪 Logging out from Supabase...')
+      await authSignOut()
 
       // Clear all user data
       setCurrentUser(null)

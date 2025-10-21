@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Camera, MapPin, Phone, Envelope } from "@phosphor-icons/react"
+import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AppContext"
 
 interface UserProfileViewProps {
@@ -28,30 +29,43 @@ export function UserProfileView({ user }: UserProfileViewProps) {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      console.log('💾 Saving profile to localStorage...', formData)
+      console.log('💾 Saving profile to Supabase...', formData)
 
-      // Update user in localStorage
-      const storedUsers = localStorage.getItem('registered-users')
-      if (storedUsers) {
-        const users = JSON.parse(storedUsers)
-        const userIndex = users.findIndex((u: any) => u.id === user.id)
-        
-        if (userIndex !== -1) {
-          users[userIndex] = {
-            ...users[userIndex],
-            name: formData.name,
-            phone: formData.phone,
-            city: formData.city,
-            bio: formData.bio
-          }
-          localStorage.setItem('registered-users', JSON.stringify(users))
-          console.log('✅ Profile updated in localStorage')
-        }
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          phone: formData.phone,
+          city: formData.city,
+          bio: formData.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Profile update error:', error)
+        toast.error(`Błąd podczas aktualizacji: ${error.message}`)
+        return
       }
+
+      console.log('✅ Profile updated:', data)
 
       // Update current user in context
       const updatedUser = { ...user, ...formData }
       setCurrentUser(updatedUser)
+
+      // Update localStorage backup
+      const storedUsers = localStorage.getItem('registered-users')
+      if (storedUsers) {
+        const users = JSON.parse(storedUsers)
+        const userIndex = users.findIndex((u: any) => u.id === user.id)
+        if (userIndex !== -1) {
+          users[userIndex] = { ...users[userIndex], ...formData }
+          localStorage.setItem('registered-users', JSON.stringify(users))
+        }
+      }
 
       setIsEditing(false)
       toast.success("Profil został zaktualizowany")

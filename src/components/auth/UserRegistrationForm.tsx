@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { User, Eye, EyeSlash, Envelope, Lock, UserCircle, Calendar } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
+import { supabase } from "@/lib/supabase"
 
 interface UserRegistrationFormProps {
   onRegister: (user: any) => void
@@ -79,24 +80,63 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
         return
       }
 
-      // Sprawdź czy email jest już zajęty
-      const existingUser = users.find(user => user.email === formData.email)
-      if (existingUser) {
-        toast.error("Ten adres email jest już zajęty")
+      console.log('✅ Walidacja przeszła, tworzenie użytkownika w Supabase...')
+
+      // 1. Utwórz konto w Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (authError) {
+        console.error('❌ Błąd Auth:', authError)
+        toast.error(`Błąd tworzenia konta: ${authError.message}`)
         setIsLoading(false)
         return
       }
 
-      console.log('✅ Walidacja przeszła, tworzenie użytkownika...')
+      if (!authData.user) {
+        toast.error("Nie udało się utworzyć konta")
+        setIsLoading(false)
+        return
+      }
 
-      // Utwórz nowego użytkownika
+      console.log('✅ Konto Auth utworzone:', authData.user.id)
+
+      // 2. Zapisz profil użytkownika do tabeli profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: authData.user.id,
+            email: formData.email,
+            name: `${formData.firstName} ${formData.lastName}`,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            age: parseInt(formData.age),
+            phone: formData.phone || null,
+            city: formData.city || null,
+            account_type: 'user',
+            created_at: new Date().toISOString()
+          }
+        ])
+
+      if (profileError) {
+        console.error('❌ Błąd profilu:', profileError)
+        toast.error(`Błąd zapisu profilu: ${profileError.message}`)
+        setIsLoading(false)
+        return
+      }
+
+      console.log('✅ Profil zapisany w Supabase')
+
+      // 3. Przygotuj dane użytkownika
       const newUser = {
-        id: `user_${Date.now()}`,
+        id: authData.user.id,
         firstName: formData.firstName,
         lastName: formData.lastName,
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
-        password: formData.password,
         age: parseInt(formData.age),
         interests: formData.interests || 'Ogólne',
         phone: formData.phone || '',
@@ -105,12 +145,13 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
         createdAt: new Date().toISOString()
       }
 
-      // Zapisz w localStorage
-      const updatedUsers = [...users, newUser]
-      localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
-      setUsers(updatedUsers)
+      // 4. Zapisz również w localStorage (backup)
+      const storedUsers = localStorage.getItem('registered-users')
+      const users = storedUsers ? JSON.parse(storedUsers) : []
+      users.push(newUser)
+      localStorage.setItem('registered-users', JSON.stringify(users))
 
-      console.log('👤 Użytkownik utworzony:', newUser)
+      console.log('👤 Użytkownik utworzony w Supabase i localStorage:', newUser)
       toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
       onRegister(newUser)
     } catch (error) {

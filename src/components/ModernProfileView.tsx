@@ -29,6 +29,7 @@ import {
   UserPlus
 } from "@phosphor-icons/react"
 import { User, BusinessProfile } from "@/types"
+import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AppContext"
 import tikLogo from "@/assets/images/tik-logo.svg"
 
@@ -61,22 +62,42 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
     }
 
     try {
-      console.log('📤 Uploading profile image...')
-      // For now, just create a local URL
-      const imageUrl = URL.createObjectURL(file)
-      
-      // Update user in localStorage
-      const storedUsers = localStorage.getItem('registered-users')
-      if (storedUsers) {
-        const users = JSON.parse(storedUsers)
-        const userIndex = users.findIndex((u: any) => u.id === user.id)
-        if (userIndex !== -1) {
-          users[userIndex].profileImage = imageUrl
-          localStorage.setItem('registered-users', JSON.stringify(users))
-        }
+      console.log('📤 Uploading profile image to Supabase...')
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `avatar-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError)
+        toast.error('Błąd podczas przesyłania zdjęcia')
+        return
       }
 
-      setCurrentUser({ ...user, profileImage: imageUrl })
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      // Update profile in database
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_image: publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('❌ Update error:', updateError)
+        toast.error('Błąd podczas aktualizacji profilu')
+        return
+      }
+
+      console.log('✅ Profile image updated')
+      setCurrentUser({ ...user, profileImage: publicUrl })
       toast.success("Zdjęcie profilowe zostało zaktualizowane!")
     } catch (error) {
       console.error('❌ Image upload error:', error)
@@ -87,26 +108,28 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      console.log('💾 Saving profile to localStorage...', formData)
+      console.log('💾 Saving profile to Supabase...', formData)
 
-      // Update user in localStorage
-      const storedUsers = localStorage.getItem('registered-users')
-      if (storedUsers) {
-        const users = JSON.parse(storedUsers)
-        const userIndex = users.findIndex((u: any) => u.id === user.id)
-        
-        if (userIndex !== -1) {
-          users[userIndex] = {
-            ...users[userIndex],
-            name: formData.name,
-            phone: formData.phone,
-            city: formData.city,
-            bio: formData.bio
-          }
-          localStorage.setItem('registered-users', JSON.stringify(users))
-        }
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          phone: formData.phone,
+          city: formData.city,
+          bio: formData.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Profile update error:', error)
+        toast.error(`Błąd podczas aktualizacji: ${error.message}`)
+        return
       }
 
+      console.log('✅ Profile updated:', data)
       const updatedUser = { ...user, ...formData }
       setCurrentUser(updatedUser)
       setIsEditing(false)
