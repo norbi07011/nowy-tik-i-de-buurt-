@@ -6,8 +6,6 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { User, Eye, EyeSlash, Envelope, Lock, UserCircle, Calendar } from "@phosphor-icons/react"
 import { useTranslation } from "@/hooks/use-translation"
-import { signUp } from "@/lib/auth"
-import { signUp } from "@/lib/auth"
 
 interface UserRegistrationFormProps {
   onRegister: (user: any) => void
@@ -89,22 +87,32 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
         return
       }
 
-      console.log('✅ Walidacja przeszła, tworzenie użytkownika w Supabase...')
+      console.log('✅ Walidacja przeszła, tworzenie użytkownika...')
 
-      const result = await signUp(
-        formData.email,
-        formData.password,
-        `${formData.firstName} ${formData.lastName}`,
-        'user'
-      )
-
-      if (result) {
-        console.log('👤 Użytkownik utworzony w Supabase:', result)
-        toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
-        onRegister(result)
-      } else {
-        toast.error("Błąd podczas tworzenia konta")
+      // Utwórz nowego użytkownika
+      const newUser = {
+        id: `user_${Date.now()}`,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        age: parseInt(formData.age),
+        interests: formData.interests || 'Ogólne',
+        phone: formData.phone || '',
+        city: formData.city || '',
+        accountType: 'user',
+        createdAt: new Date().toISOString()
       }
+
+      // Zapisz w localStorage
+      const updatedUsers = [...users, newUser]
+      localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
+      setUsers(updatedUsers)
+
+      console.log('👤 Użytkownik utworzony:', newUser)
+      toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
+      onRegister(newUser)
     } catch (error) {
       console.error('❌ Błąd podczas rejestracji:', error)
       toast.error("Błąd podczas rejestracji")

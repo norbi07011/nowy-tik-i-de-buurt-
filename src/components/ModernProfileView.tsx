@@ -29,7 +29,6 @@ import {
   UserPlus
 } from "@phosphor-icons/react"
 import { User, BusinessProfile } from "@/types"
-import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AppContext"
 import tikLogo from "@/assets/images/tik-logo.svg"
 
@@ -63,41 +62,21 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
 
     try {
       console.log('📤 Uploading profile image...')
-
-      // Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop()
-      const fileName = `avatar-${Date.now()}.${fileExt}`
-      const filePath = `${user.id}/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true })
-
-      if (uploadError) {
-        console.error('❌ Upload error:', uploadError)
-        toast.error('Błąd podczas przesyłania zdjęcia')
-        return
+      // For now, just create a local URL
+      const imageUrl = URL.createObjectURL(file)
+      
+      // Update user in localStorage
+      const storedUsers = localStorage.getItem('registered-users')
+      if (storedUsers) {
+        const users = JSON.parse(storedUsers)
+        const userIndex = users.findIndex((u: any) => u.id === user.id)
+        if (userIndex !== -1) {
+          users[userIndex].profileImage = imageUrl
+          localStorage.setItem('registered-users', JSON.stringify(users))
+        }
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
-
-      // Update profile in database
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ profile_image: publicUrl })
-        .eq('id', user.id)
-
-      if (updateError) {
-        console.error('❌ Update error:', updateError)
-        toast.error('Błąd podczas aktualizacji profilu')
-        return
-      }
-
-      console.log('✅ Profile image updated')
-      setCurrentUser({ ...user, profileImage: publicUrl })
+      setCurrentUser({ ...user, profileImage: imageUrl })
       toast.success("Zdjęcie profilowe zostało zaktualizowane!")
     } catch (error) {
       console.error('❌ Image upload error:', error)
@@ -108,28 +87,26 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      console.log('💾 Saving profile to Supabase...', formData)
+      console.log('💾 Saving profile to localStorage...', formData)
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          name: formData.name,
-          phone: formData.phone,
-          city: formData.city,
-          bio: formData.bio,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('❌ Profile update error:', error)
-        toast.error(`Błąd podczas aktualizacji: ${error.message}`)
-        return
+      // Update user in localStorage
+      const storedUsers = localStorage.getItem('registered-users')
+      if (storedUsers) {
+        const users = JSON.parse(storedUsers)
+        const userIndex = users.findIndex((u: any) => u.id === user.id)
+        
+        if (userIndex !== -1) {
+          users[userIndex] = {
+            ...users[userIndex],
+            name: formData.name,
+            phone: formData.phone,
+            city: formData.city,
+            bio: formData.bio
+          }
+          localStorage.setItem('registered-users', JSON.stringify(users))
+        }
       }
 
-      console.log('✅ Profile updated:', data)
       const updatedUser = { ...user, ...formData }
       setCurrentUser(updatedUser)
       setIsEditing(false)
@@ -153,34 +130,11 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
     setIsEditing(false)
   }
 
-  const removeFavoriteBusiness = (businessId: string) => {
-    setFavoriteBusinesses((prev) => 
-      (prev || []).filter(business => business.id !== businessId)
-    )
-    toast.success("Usunięto z ulubionych")
-  }
-
-  const addInterest = (interest: string) => {
-    if (interest && !formData.interests.includes(interest)) {
-      setFormData(prev => ({
-        ...prev,
-        interests: [...prev.interests, interest]
-      }))
-    }
-  }
-
-  const removeInterest = (interest: string) => {
-    setFormData(prev => ({
-      ...prev,
-      interests: prev.interests.filter(i => i !== interest)
-    }))
-  }
-
   const stats = {
-    saved: savedPosts?.length || 0,
-    liked: likedPosts?.length || 0,
-    favorites: favoriteBusinesses?.length || 0,
-    following: favoriteBusinesses?.length || 0
+    saved: 0,
+    liked: 0,
+    favorites: 0,
+    following: 0
   }
 
   return (
@@ -223,12 +177,12 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
               <div className="relative group">
                 <Avatar className="w-32 h-32 border-4 border-background shadow-2xl ring-4 ring-primary/20">
                   <AvatarImage 
-                    src={currentUser.profileImage || currentUser.avatar} 
+                    src={user.profileImage || user.avatar} 
                     className="object-cover"
                   />
                   <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                    {(currentUser.firstName?.[0] || currentUser.name?.[0] || "U")}
-                    {(currentUser.lastName?.[0] || "")}
+                    {(user.firstName?.[0] || user.name?.[0] || "U")}
+                    {(user.lastName?.[0] || "")}
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
@@ -253,43 +207,43 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
               <div className="flex-1 text-center md:text-left space-y-4">
                 <div>
                   <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    {currentUser.firstName && currentUser.lastName 
-                      ? `${currentUser.firstName} ${currentUser.lastName}`
-                      : currentUser.name
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.name
                     }
                   </h2>
-                  <p className="text-muted-foreground text-lg">{currentUser.bio}</p>
+                  <p className="text-muted-foreground text-lg">{user.bio}</p>
                 </div>
                 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
-                  {currentUser.city && (
+                  {user.city && (
                     <div className="flex items-center gap-1">
                       <MapPin size={16} className="text-primary" />
-                      {currentUser.city}
+                      {user.city}
                     </div>
                   )}
-                  {currentUser.email && (
+                  {user.email && (
                     <div className="flex items-center gap-1">
                       <Envelope size={16} className="text-primary" />
-                      {currentUser.email}
+                      {user.email}
                     </div>
                   )}
-                  {currentUser.phone && (
+                  {user.phone && (
                     <div className="flex items-center gap-1">
                       <Phone size={16} className="text-primary" />
-                      {currentUser.phone}
+                      {user.phone}
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <Calendar size={16} className="text-primary" />
-                    Dołączył {new Date(currentUser.createdAt).toLocaleDateString('pl-PL')}
+                    Dołączył {new Date(user.createdAt).toLocaleDateString('pl-PL')}
                   </div>
                 </div>
 
                 {/* Interests */}
-                {currentUser.interests && currentUser.interests.length > 0 && (
+                {user.interests && user.interests.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {currentUser.interests.map((interest, index) => (
+                    {user.interests.map((interest, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
                         {interest}
                       </Badge>
@@ -567,15 +521,15 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Status</span>
-                  <Badge variant={currentUser.isVerified ? "default" : "secondary"}>
-                    {currentUser.isVerified ? "Zweryfikowany" : "Niezweryfikowany"}
+                  <Badge variant={user.isVerified ? "default" : "secondary"}>
+                    {user.isVerified ? "Zweryfikowany" : "Niezweryfikowany"}
                   </Badge>
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Typ konta</span>
                   <Badge variant="outline">
-                    {currentUser.accountType === 'business' ? 'Biznes' : 'Osobiste'}
+                    {user.accountType === 'business' ? 'Biznes' : 'Osobiste'}
                   </Badge>
                 </div>
                 
@@ -590,7 +544,7 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
 
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground">
-                    Członek od {new Date(currentUser.createdAt).toLocaleDateString('pl-PL')}
+                    Członek od {new Date(user.createdAt).toLocaleDateString('pl-PL')}
                   </p>
                 </div>
               </CardContent>
