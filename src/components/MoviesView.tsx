@@ -37,7 +37,10 @@ type Movie = {
   uploadDate: string
 }
 
-const sampleMovies: Movie[] = [
+// No demo data - movies will be loaded from Supabase
+const sampleMovies: Movie[] = []
+
+const removedSampleData = [
   {
     id: "1",
     title: "Amsterdam Centrum Business Tour",

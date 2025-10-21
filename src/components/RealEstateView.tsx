@@ -37,7 +37,10 @@ type RealEstate = {
   featured: boolean
 }
 
-const sampleRealEstate: RealEstate[] = [
+// No demo data - real estate will be loaded from Supabase
+const sampleRealEstate: RealEstate[] = []
+
+const removedSampleData = [
   {
     id: "1",
     title: "Ruim 3-kamer appartement in Amsterdam",

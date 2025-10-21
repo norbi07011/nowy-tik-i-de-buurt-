@@ -28,7 +28,10 @@ type Discount = {
   featured: boolean
 }
 
-const sampleDiscounts: Discount[] = [
+// No demo data - discounts will be loaded from Supabase
+const sampleDiscounts: Discount[] = []
+
+const removedSampleData = [
   {
     id: "1",
     title: "Hollandse Nieuwe Haring Proeverij",

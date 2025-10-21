@@ -168,17 +168,8 @@ export function ChatMessagesView() {
   }
 
   const handleNewConversation = () => {
-    const newConv: Conversation = {
-      id: `conv-${Date.now()}`,
-      participantName: 'Demo Business',
-      participantType: 'business',
-      unreadCount: 0,
-      isOnline: true
-    }
-    
-    setConversations(prev => [newConv, ...prev])
-    handleSelectConversation(newConv.id)
-    toast.success('Nieuw gesprek gestart!')
+    // New conversations should be created with real business data from Supabase
+    toast.info('Wybierz biznes z listy aby rozpocząć rozmowę')
   }
 
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0)

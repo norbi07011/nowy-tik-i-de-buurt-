@@ -27,7 +27,10 @@ type Photo = {
   liked: boolean
 }
 
-const samplePhotos: Photo[] = [
+// No demo data - photos will be loaded from Supabase
+const samplePhotos: Photo[] = []
+
+const removedSampleData = [
   {
     id: "1",
     title: "Amsterdam Grachten bij Zonsondergang",

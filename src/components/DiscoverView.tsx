@@ -11,68 +11,8 @@ const categories = [
   "Bookstore", "Garden Center", "Art Gallery", "Crafts"
 ]
 
-const businessGrid = [
-  {
-    id: "1",
-    name: "Café Amsterdam",
-    category: "Restaurant",
-    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=300&h=200&fit=crop",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
-    location: "Amsterdam Centrum",
-    rating: 4.8,
-    distance: "0.3 km"
-  },
-  {
-    id: "2", 
-    name: "Utrecht Bakery",
-    category: "Bakery",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300&h=200&fit=crop",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
-    location: "Utrecht Binnenstad",
-    rating: 4.6,
-    distance: "1.2 km"
-  },
-  {
-    id: "3",
-    name: "Rotterdam Flowers", 
-    category: "Florist",
-    image: "https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=300&h=200&fit=crop",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
-    location: "Rotterdam Zuid",
-    rating: 4.9,
-    distance: "0.8 km"
-  },
-  {
-    id: "4",
-    name: "Den Haag Style",
-    category: "Fashion", 
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=200&fit=crop",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50&h=50&fit=crop&crop=face",
-    location: "Den Haag West",
-    rating: 4.7,
-    distance: "2.1 km"
-  },
-  {
-    id: "5",
-    name: "Eindhoven Tech",
-    category: "Electronics",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=200&fit=crop",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=50&h=50&fit=crop&crop=face", 
-    location: "Eindhoven Centrum",
-    rating: 4.5,
-    distance: "1.7 km"
-  },
-  {
-    id: "6",
-    name: "Groningen Bikes",
-    category: "Sports",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
-    location: "Groningen Noord", 
-    rating: 4.8,
-    distance: "0.9 km"
-  }
-]
+// No demo data - businesses will be loaded from Supabase
+const businessGrid: any[] = []
 
 export function DiscoverView() {
   const [selectedCategory, setSelectedCategory] = useState("All")

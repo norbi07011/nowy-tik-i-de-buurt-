@@ -46,10 +46,13 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
 
   const [formData, setFormData] = useState({
     name: user.name || "",
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
     email: user.email || "",
     phone: user.phone || "",
     city: user.city || "",
-    bio: user.bio || ""
+    bio: user.bio || "",
+    interests: user.interests || []
   })
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,12 +148,39 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
   const handleCancel = () => {
     setFormData({
       name: user.name || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
       email: user.email || "",
       phone: user.phone || "",
       city: user.city || "",
-      bio: user.bio || ""
+      bio: user.bio || "",
+      interests: user.interests || []
     })
     setIsEditing(false)
+  }
+
+  // Interest management
+  const removeInterest = (interest: string) => {
+    setFormData(prev => ({
+      ...prev,
+      interests: prev.interests.filter(i => i !== interest)
+    }))
+  }
+
+  const addInterest = (interest: string) => {
+    if (!interest.trim()) return
+    if (formData.interests.includes(interest)) return
+    setFormData(prev => ({
+      ...prev,
+      interests: [...prev.interests, interest.trim()]
+    }))
+  }
+
+  // Favorite businesses state
+  const [favoriteBusinesses, setFavoriteBusinesses] = useState<BusinessProfile[]>([])
+
+  const removeFavoriteBusiness = (businessId: string) => {
+    setFavoriteBusinesses(prev => prev.filter(b => b.id !== businessId))
   }
 
   const stats = {
@@ -223,6 +253,7 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
+                  aria-label="Upload profile picture"
                 />
               </div>
 
@@ -397,6 +428,7 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
                           <button
                             onClick={() => removeInterest(interest)}
                             className="ml-1 hover:text-destructive"
+                            aria-label={`Remove ${interest}`}
                           >
                             <X size={12} />
                           </button>
@@ -559,7 +591,7 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Język</span>
                   <Badge variant="outline">
-                    {currentUser?.language === 'nl' ? 'Nederlands' : 'English'}
+                    {user.language === 'nl' ? 'Nederlands' : 'English'}
                   </Badge>
                 </div>
 

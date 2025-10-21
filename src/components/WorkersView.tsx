@@ -33,7 +33,10 @@ type Worker = {
   featured: boolean
 }
 
-const sampleWorkers: Worker[] = [
+// No demo data - workers will be loaded from Supabase
+const sampleWorkers: Worker[] = []
+
+const removedSampleData = [
   {
     id: "1",
     name: "Pieter van der Berg",
