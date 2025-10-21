@@ -174,53 +174,47 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <motion.button
+        <button
           type="button"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
             console.log('🔵 Kliknięto przycisk Użytkownik')
+            console.log('🔵 Callback:', onSwitchToUserRegister)
             onSwitchToUserRegister()
+            console.log('🔵 Callback wykonany')
           }}
-          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group cursor-pointer"
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98]"
         >
-          <motion.div
-            whileHover={{ rotate: 10 }}
-            className="p-2 rounded-xl bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors"
-          >
+          <div className="p-2 rounded-xl bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
             <User className="w-5 h-5" />
-          </motion.div>
+          </div>
           <div className="text-left">
             <p className="font-semibold">Użytkownik</p>
             <p className="text-sm text-slate-600">Konto osobiste</p>
           </div>
-        </motion.button>
+        </button>
 
-        <motion.button
+        <button
           type="button"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
             console.log('🟣 Kliknięto przycisk Biznes')
+            console.log('🟣 Callback:', onSwitchToBusinessRegister)
             onSwitchToBusinessRegister()
+            console.log('🟣 Callback wykonany')
           }}
-          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group cursor-pointer"
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98]"
         >
-          <motion.div
-            whileHover={{ rotate: 10 }}
-            className="p-2 rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors"
-          >
+          <div className="p-2 rounded-xl bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
             <Building className="w-5 h-5" />
-          </motion.div>
+          </div>
           <div className="text-left">
             <p className="font-semibold">Biznes</p>
             <p className="text-sm text-slate-600">Konto firmowe</p>
           </div>
-        </motion.button>
+        </button>
       </motion.div>
     </motion.form>
   )
