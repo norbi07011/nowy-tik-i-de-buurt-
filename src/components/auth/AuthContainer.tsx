@@ -14,6 +14,8 @@ interface AuthContainerProps {
 export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
   const [authMode, setAuthMode] = useState<AuthMode>("login")
 
+  console.log('🎯 AuthContainer render - Current authMode:', authMode)
+
   const handleLogin = (user: any) => {
     onAuthSuccess(user)
   }
@@ -23,22 +25,28 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
   }
 
   const handleSwitchToUserRegister = () => {
-    console.log('🔵 AuthContainer: Przełączanie na rejestrację użytkownika')
+    console.log('🔵 AuthContainer: Przed przełączeniem, authMode:', authMode)
     setAuthMode("register-user")
+    console.log('🔵 AuthContainer: Po setAuthMode("register-user")')
   }
 
   const handleSwitchToBusinessRegister = () => {
-    console.log('🟣 AuthContainer: Przełączanie na rejestrację biznesu')
+    console.log('🟣 AuthContainer: Przed przełączeniem, authMode:', authMode)
     setAuthMode("register-business")
+    console.log('🟣 AuthContainer: Po setAuthMode("register-business")')
   }
 
   const handleBackToLogin = () => {
+    console.log('⬅️ AuthContainer: Powrót do logowania')
     setAuthMode("login")
   }
 
   const renderAuthForm = () => {
+    console.log('📋 renderAuthForm wywołane z authMode:', authMode)
+
     switch (authMode) {
       case "login":
+        console.log('✅ Renderowanie LoginForm')
         return (
           <LoginForm
             onLogin={handleLogin}
@@ -46,24 +54,27 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
             onSwitchToBusinessRegister={handleSwitchToBusinessRegister}
           />
         )
-      
+
       case "register-user":
+        console.log('✅ Renderowanie UserRegistrationForm')
         return (
           <UserRegistrationForm
             onRegister={handleLogin}
             onSwitchToLogin={handleBackToLogin}
           />
         )
-      
+
       case "register-business":
+        console.log('✅ Renderowanie BusinessRegistrationForm')
         return (
           <BusinessRegistrationForm
             onRegister={handleLogin}
             onSwitchToLogin={handleBackToLogin}
           />
         )
-      
+
       default:
+        console.log('❌ Nieznany authMode:', authMode)
         return null
     }
   }
