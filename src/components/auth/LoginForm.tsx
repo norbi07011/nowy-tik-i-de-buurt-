@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { Building, User, Eye, EyeSlash, Envelope, Lock } from "@phosphor-icons/react"
-import { useTranslation } from "@/hooks/use-translation"
-import { supabase } from "@/lib/supabase"
+import { signIn } from "@/lib/auth"
 
 interface LoginFormProps {
   onLogin: (user: any) => void
@@ -15,71 +14,36 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessRegister }: LoginFormProps) {
-  const { t } = useTranslation()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [users, setUsers] = useState<any[]>([])
-
-  // Load users from localStorage
-  useEffect(() => {
-    try {
-      const storedUsers = localStorage.getItem('registered-users')
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers))
-      }
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
-  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!email || !password) {
+      toast.error("Proszę wypełnić wszystkie pola")
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      // Simulate loading for premium feel
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      // Find user in storage
-      const user = users?.find((u: any) => u.email === email && u.password === password)
+      const user = await signIn(email, password)
 
       if (user) {
-        // Login with existing user from storage
-        const successMessage = user.accountType === 'business' 
-          ? "� Witaj w panelu biznesowym!" 
-          : "�🎉 Pomyślnie zalogowano!"
+        const successMessage = user.accountType === 'business'
+          ? "Witaj w panelu biznesowym!"
+          : "Pomyślnie zalogowano!"
         toast.success(successMessage)
         onLogin(user)
       } else {
-        // Demo users for testing - detect account type from email
-        const isBusiness = email.includes('business') || email.includes('firma') || email.includes('admin') || email.includes('biznes')
-        
-        const demoUser = {
-          id: Date.now().toString(),
-          name: email.split('@')[0],
-          email,
-          accountType: isBusiness ? 'business' : 'user',
-          profileImage: '',
-          createdAt: new Date().toISOString(),
-          // Add business specific fields if it's a business account
-          ...(isBusiness ? {
-            businessName: email.split('@')[0] + " Business",
-            category: "Usługi",
-            isVerified: true,
-            isPremium: true
-          } : {})
-        }
-        
-        const successMessage = isBusiness 
-          ? "✨ Witaj w premium panelu biznesowym!" 
-          : "✨ Witaj w premium doświadczeniu!"
-        toast.success(successMessage)
-        onLogin(demoUser)
+        toast.error("Nieprawidłowy email lub hasło")
       }
     } catch (error) {
-      toast.error("Błąd podczas logowania")
+      console.error('Login error:', error)
+      toast.error("Błąd podczas logowania. Sprawdź swoje dane.")
     } finally {
       setIsLoading(false)
     }
@@ -247,27 +211,6 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
             <p className="text-sm text-slate-600">Konto firmowe</p>
           </div>
         </motion.button>
-      </motion.div>
-
-      {/* Demo Info */}
-      <motion.div 
-        className="text-center p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-      >
-        <p className="text-slate-700 text-sm font-medium mb-2">💡 Demo Mode</p>
-        <div className="space-y-2">
-          <p className="text-slate-500 text-xs leading-relaxed">
-            <strong className="text-blue-600">Konto użytkownika:</strong> dowolny email (np. user@test.com)
-          </p>
-          <p className="text-slate-500 text-xs leading-relaxed">
-            <strong className="text-blue-600">Konto biznesowe:</strong> email z "business", "firma", "biznes" lub "admin" (np. firma@test.com)
-          </p>
-          <p className="text-slate-500 text-xs leading-relaxed">
-            Hasło: dowolne (w trybie demo)
-          </p>
-        </div>
       </motion.div>
     </motion.form>
   )

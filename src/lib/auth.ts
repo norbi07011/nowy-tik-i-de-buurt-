@@ -16,19 +16,18 @@ export interface AuthUser {
 
 /**
  * Sign in with email and password
- * Falls back to demo mode if Supabase authentication fails
  */
 export async function signIn(email: string, password: string): Promise<AuthUser | null> {
   try {
-    // Try Supabase authentication
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (authError) {
-      // Fall back to demo mode
-      return createDemoUser(email)
+      console.error('Authentication error:', authError)
+      toast.error('Nieprawidłowy email lub hasło')
+      return null
     }
 
     // Fetch user profile from database
@@ -43,7 +42,8 @@ export async function signIn(email: string, password: string): Promise<AuthUser 
 
     if (profileError) {
       console.error('Profile fetch error:', profileError)
-      return createDemoUser(email)
+      toast.error('Błąd podczas pobierania profilu')
+      return null
     }
 
     // Map database profile to AuthUser
@@ -63,7 +63,8 @@ export async function signIn(email: string, password: string): Promise<AuthUser 
     }
   } catch (error) {
     console.error('Sign in error:', error)
-    return createDemoUser(email)
+    toast.error('Błąd podczas logowania')
+    return null
   }
 }
 
@@ -217,24 +218,3 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 }
 
-/**
- * Create demo user for testing (fallback when Supabase is not available)
- */
-function createDemoUser(email: string): AuthUser {
-  const isBusiness = email.includes('business') || email.includes('firma') || email.includes('admin') || email.includes('biznes')
-  
-  return {
-    id: `demo-${Date.now()}`,
-    name: email.split('@')[0],
-    email,
-    accountType: isBusiness ? 'business' : 'user',
-    profileImage: '',
-    createdAt: new Date().toISOString(),
-    ...(isBusiness ? {
-      businessName: email.split('@')[0] + " Business",
-      category: "Usługi",
-      isVerified: true,
-      isPremium: true
-    } : {})
-  }
-}
