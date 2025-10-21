@@ -25,12 +25,14 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
   }
 
   const handleSwitchToUserRegister = () => {
+    console.log('🔵 AuthContainer: handleSwitchToUserRegister wywołane')
     console.log('🔵 AuthContainer: Przed przełączeniem, authMode:', authMode)
     setAuthMode("register-user")
     console.log('🔵 AuthContainer: Po setAuthMode("register-user")')
   }
 
   const handleSwitchToBusinessRegister = () => {
+    console.log('🟣 AuthContainer: handleSwitchToBusinessRegister wywołane')
     console.log('🟣 AuthContainer: Przed przełączeniem, authMode:', authMode)
     setAuthMode("register-business")
     console.log('🟣 AuthContainer: Po setAuthMode("register-business")')
@@ -113,17 +115,17 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
       transition={{ duration: 0.8 }}
     >
       {/* Premium Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Animated Grid */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0 auth-grid-bg" />
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute inset-0 auth-grid-bg pointer-events-none" />
         </div>
 
         {/* Floating Particles */}
         {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-white rounded-full opacity-20"
+            className="absolute w-1 h-1 bg-white rounded-full opacity-20 pointer-events-none"
             animate={{
               x: [0, Math.random() * 200 - 100],
               y: [0, Math.random() * 200 - 100],
@@ -143,7 +145,7 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
 
         {/* Gradient Orbs */}
         <motion.div
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-sky-500/20 rounded-full blur-3xl"
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-sky-500/20 rounded-full blur-3xl pointer-events-none"
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -155,7 +157,7 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
           }}
         />
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-sky-400/15 to-blue-500/15 rounded-full blur-3xl"
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-sky-400/15 to-blue-500/15 rounded-full blur-3xl pointer-events-none"
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.2, 0.4, 0.2],
@@ -221,7 +223,7 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
         >
           {/* Premium Border Animation */}
           <motion.div 
-            className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-sky-500/10 to-blue-600/10 rounded-3xl opacity-0"
+            className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-sky-500/10 to-blue-600/10 rounded-3xl opacity-0 pointer-events-none"
             animate={{ opacity: [0, 0.5, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
           />
@@ -282,12 +284,12 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
 
       {/* Decorative Elements */}
       <motion.div 
-        className="absolute top-10 right-10 w-32 h-32 border border-white/10 rounded-3xl"
+        className="absolute top-10 right-10 w-32 h-32 border border-white/10 rounded-3xl pointer-events-none"
         animate={{ rotate: 360 }}
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
       />
       <motion.div 
-        className="absolute bottom-10 left-10 w-24 h-24 border border-white/10 rounded-2xl"
+        className="absolute bottom-10 left-10 w-24 h-24 border border-white/10 rounded-2xl pointer-events-none"
         animate={{ rotate: -360 }}
         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
       />

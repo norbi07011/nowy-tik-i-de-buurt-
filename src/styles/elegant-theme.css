@@ -111,6 +111,37 @@ p, span, div, label {
   transform: translateY(0);
 }
 
+.btn-elegant:disabled {
+  background: rgba(148, 163, 184, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.btn-elegant:disabled:hover {
+  background: rgba(148, 163, 184, 0.5);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Ensure buttons are always clickable */
+.btn-elegant {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.btn-elegant:disabled {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
+/* Ensure form buttons work properly */
+button[type="submit"], button[type="button"] {
+  pointer-events: auto !important;
+}
+
 /* Elegant Cards */
 .card-elegant {
   background: var(--glass-bg);

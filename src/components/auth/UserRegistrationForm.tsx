@@ -45,19 +45,46 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔥 UserRegistrationForm: handleRegister wywołane')
+    
+    // Sprawdź czy wszystkie wymagane pola są wypełnione
+    if (!formData.name || !formData.email || !formData.password || !formData.age) {
+      toast.error("Proszę wypełnić wszystkie wymagane pola")
+      return
+    }
+
     setIsLoading(true)
 
     try {
       // Validation
       if (formData.password !== formData.confirmPassword) {
         toast.error("Hasła nie są identyczne")
+        setIsLoading(false)
         return
       }
 
       if (formData.password.length < 6) {
         toast.error("Hasło musi mieć minimum 6 znaków")
+        setIsLoading(false)
         return
       }
+
+      const ageNum = parseInt(formData.age)
+      if (isNaN(ageNum) || ageNum < 13 || ageNum > 120) {
+        toast.error("Wiek musi być liczbą między 13 a 120")
+        setIsLoading(false)
+        return
+      }
+
+      // Sprawdź czy email jest już zajęty
+      const existingUser = users.find(user => user.email === formData.email)
+      if (existingUser) {
+        toast.error("Ten adres email jest już zajęty")
+        setIsLoading(false)
+        return
+      }
+
+      console.log('✅ Walidacja przeszła, tworzenie użytkownika...')
 
       // Simulate premium registration process
       await new Promise(resolve => setTimeout(resolve, 2000))
@@ -75,6 +102,8 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
         isPremium: true
       }
 
+      console.log('👤 Nowy użytkownik utworzony:', newUser)
+
       // Save to localStorage
       const updatedUsers = [...(users || []), newUser]
       localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
@@ -83,6 +112,7 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
       toast.success("🎉 Konto zostało utworzone! Witaj w premium społeczności!")
       onRegister(newUser)
     } catch (error) {
+      console.error('❌ Błąd podczas rejestracji:', error)
       toast.error("Błąd podczas rejestracji")
     } finally {
       setIsLoading(false)
@@ -310,6 +340,11 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
           type="submit"
           disabled={isLoading}
           className="w-full btn-elegant h-12 text-lg font-semibold relative overflow-hidden"
+          onClick={(e) => {
+            console.log('🎯 Kliknięto przycisk Utwórz konto użytkownika')
+            console.log('🎯 isLoading:', isLoading)
+            console.log('🎯 formData:', formData)
+          }}
         >
           {isLoading ? (
             <motion.div 
@@ -337,7 +372,12 @@ export function UserRegistrationForm({ onRegister, onSwitchToLogin }: UserRegist
           Masz już konto?{" "}
           <motion.button
             type="button"
-            onClick={onSwitchToLogin}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('⬅️ Kliknięto Zaloguj się (UserReg)')
+              onSwitchToLogin()
+            }}
             className="text-blue-400 hover:text-blue-300 font-semibold transition-colors underline underline-offset-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

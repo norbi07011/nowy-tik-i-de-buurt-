@@ -54,19 +54,39 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔥 BusinessRegistrationForm: handleRegister wywołane')
+    
+    // Sprawdź czy wszystkie wymagane pola są wypełnione
+    if (!formData.businessName || !formData.ownerName || !formData.email || !formData.password || !formData.phone || !formData.address || !formData.category) {
+      toast.error("Proszę wypełnić wszystkie wymagane pola")
+      return
+    }
+
     setIsLoading(true)
 
     try {
       // Validation
       if (formData.password !== formData.confirmPassword) {
         toast.error("Hasła nie są identyczne")
+        setIsLoading(false)
         return
       }
 
       if (formData.password.length < 6) {
         toast.error("Hasło musi mieć minimum 6 znaków")
+        setIsLoading(false)
         return
       }
+
+      // Sprawdź czy email jest już zajęty
+      const existingUser = users.find(user => user.email === formData.email)
+      if (existingUser) {
+        toast.error("Ten adres email jest już zajęty")
+        setIsLoading(false)
+        return
+      }
+
+      console.log('✅ Walidacja przeszła, tworzenie konta biznesowego...')
 
       // Simulate premium registration process
       await new Promise(resolve => setTimeout(resolve, 2500))
@@ -92,6 +112,8 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
         createdAt: new Date().toISOString()
       }
 
+      console.log('🏢 Nowe konto biznesowe utworzone:', newBusiness)
+
       // Save to localStorage
       const updatedUsers = [...(users || []), newBusiness]
       localStorage.setItem('registered-users', JSON.stringify(updatedUsers))
@@ -100,6 +122,7 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
       toast.success("🎉 Konto biznesowe zostało utworzone! Witaj w premium społeczności biznesowej!")
       onRegister(newBusiness)
     } catch (error) {
+      console.error('❌ Błąd podczas rejestracji biznesowej:', error)
       toast.error("Błąd podczas rejestracji")
     } finally {
       setIsLoading(false)
@@ -431,6 +454,11 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
           type="submit"
           disabled={isLoading}
           className="w-full btn-elegant h-12 text-lg font-semibold relative overflow-hidden"
+          onClick={(e) => {
+            console.log('🎯 Kliknięto przycisk Utwórz konto biznesowe')
+            console.log('🎯 isLoading:', isLoading)
+            console.log('🎯 formData:', formData)
+          }}
         >
           {isLoading ? (
             <motion.div 
@@ -458,7 +486,12 @@ export function BusinessRegistrationForm({ onRegister, onSwitchToLogin }: Busine
           Masz już konto?{" "}
           <motion.button
             type="button"
-            onClick={onSwitchToLogin}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('⬅️ Kliknięto Zaloguj się (BusinessReg)')
+              onSwitchToLogin()
+            }}
             className="text-purple-400 hover:text-purple-300 font-semibold transition-colors underline underline-offset-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
