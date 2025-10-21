@@ -100,17 +100,23 @@ export async function signUp(
     })
 
     if (authError) {
+      console.error('❌ Auth error:', authError)
       toast.error(authError.message)
       return null
     }
 
     if (!authData.user) {
+      console.error('❌ No user data returned')
       toast.error('Nie udało się utworzyć konta')
       return null
     }
 
+    console.log('✅ User created in auth:', authData.user.id)
+    console.log('📧 Email confirmed:', authData.user.email_confirmed_at)
+    console.log('🔑 Session:', authData.session ? 'YES' : 'NO')
+
     // Create profile
-    const { error: profileError } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: authData.user.id,
@@ -118,12 +124,16 @@ export async function signUp(
         name,
         account_type: accountType
       })
+      .select()
 
     if (profileError) {
-      console.error('Profile creation error:', profileError)
-      toast.error('Błąd podczas tworzenia profilu')
+      console.error('❌ Profile creation error:', profileError)
+      console.error('❌ Error details:', JSON.stringify(profileError, null, 2))
+      toast.error(`Błąd podczas tworzenia profilu: ${profileError.message}`)
       return null
     }
+
+    console.log('✅ Profile created:', profileData)
 
     // Create business profile if needed
     if (accountType === 'business' && businessData) {
