@@ -1,5 +1,4 @@
-import { useState } from "react"
-import { useKV } from "@/hooks/use-local-storage"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/contexts/AppContext"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 import { 
   Building2, 
   MapPin, 
@@ -73,45 +75,84 @@ interface BusinessProfile {
 }
 
 export function MyBusinessView() {
+  const { currentUser, businessProfile, setBusinessProfile } = useAuth()
   const [activeTab, setActiveTab] = useState("overview")
   const [isEditing, setIsEditing] = useState(false)
-  const [businessProfile, setBusinessProfile] = useKV<BusinessProfile>("business-profile", {
-    name: "Moja Firma",
-    description: "Profesjonalne usługi w Twojej okolicy",
-    category: "Usługi",
-    address: "ul. Przykładowa 123, 00-000 Miasto",
-    phone: "+48 123 456 789",
-    email: "kontakt@mojafirma.pl",
-    website: "www.mojafirma.pl",
-    hours: {
-      monday: { open: "09:00", close: "17:00", closed: false },
-      tuesday: { open: "09:00", close: "17:00", closed: false },
-      wednesday: { open: "09:00", close: "17:00", closed: false },
-      thursday: { open: "09:00", close: "17:00", closed: false },
-      friday: { open: "09:00", close: "17:00", closed: false },
-      saturday: { open: "10:00", close: "14:00", closed: false },
-      sunday: { open: "10:00", close: "14:00", closed: true }
-    },
-    socialMedia: {
-      facebook: "",
-      instagram: "",
-      linkedin: ""
-    },
-    services: ["Usługa 1", "Usługa 2", "Usługa 3"],
-    tags: ["profesjonalne", "lokalne", "zaufane"]
+  const [isSaving, setIsSaving] = useState(false)
+  const [formData, setFormData] = useState({
+    business_name: "",
+    description: "",
+    category: "",
+    address: "",
+    phone: "",
+    email: "",
+    website: ""
   })
 
-  const [businessStats] = useKV<BusinessStats>("business-stats", {
-    views: 1247,
-    contacts: 89,
-    reviews: 42,
-    rating: 4.8,
-    growth: 23.5
-  })
+  useEffect(() => {
+    if (businessProfile) {
+      setFormData({
+        business_name: businessProfile.business_name || "",
+        description: businessProfile.description || "",
+        category: businessProfile.category || "",
+        address: businessProfile.address || "",
+        phone: businessProfile.phone || "",
+        email: currentUser?.email || "",
+        website: businessProfile.website || ""
+      })
+    } else if (currentUser) {
+      setFormData({
+        business_name: currentUser.businessName || "",
+        description: "",
+        category: currentUser.category || "",
+        address: "",
+        phone: currentUser.phone || "",
+        email: currentUser.email || "",
+        website: ""
+      })
+    }
+  }, [businessProfile, currentUser])
 
-  const handleSave = () => {
-    setIsEditing(false)
-    // Here you would typically save to backend
+  const businessStats: BusinessStats = {
+    views: 0,
+    contacts: 0,
+    reviews: 0,
+    rating: 0,
+    growth: 0
+  }
+
+  const handleSave = async () => {
+    if (!currentUser) return
+
+    setIsSaving(true)
+    try {
+      const { error } = await supabase
+        .from('business_profiles')
+        .update({
+          business_name: formData.business_name,
+          description: formData.description,
+          category: formData.category,
+          address: formData.address,
+          phone: formData.phone,
+          website: formData.website,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', currentUser.id)
+
+      if (error) {
+        console.error('Update error:', error)
+        toast.error('Błąd podczas zapisywania')
+        return
+      }
+
+      toast.success('Profil zaktualizowany!')
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Błąd podczas zapisywania')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const ProfileOverview = () => (
@@ -125,8 +166,8 @@ export function MyBusinessView() {
                 <Building2 className="w-10 h-10 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">{businessProfile?.name || "Moja Firma"}</h2>
-                <p className="text-muted-foreground">{businessProfile?.category || "Usługi"}</p>
+                <h2 className="text-2xl font-bold">{formData.business_name || currentUser?.businessName || "Moja Firma"}</h2>
+                <p className="text-muted-foreground">{formData.category || currentUser?.category || "Usługi"}</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <div className="flex items-center">
                     <Star className="w-4 h-4 text-yellow-500 mr-1" />
@@ -137,12 +178,13 @@ export function MyBusinessView() {
                 </div>
               </div>
             </div>
-            <Button 
-              variant={isEditing ? "default" : "outline"} 
+            <Button
+              variant={isEditing ? "default" : "outline"}
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+              disabled={isSaving}
             >
               {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
-              {isEditing ? "Zapisz" : "Edytuj"}
+              {isSaving ? "Zapisywanie..." : (isEditing ? "Zapisz" : "Edytuj")}
             </Button>
           </div>
 
@@ -178,32 +220,32 @@ export function MyBusinessView() {
                 {isEditing ? (
                   <Textarea
                     id="description"
-                    value={businessProfile?.description || ""}
-                    onChange={(e) => setBusinessProfile(prev => ({ ...prev!, description: e.target.value }))}
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     className="mt-1"
                     rows={3}
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-1">{businessProfile?.description || "Brak opisu"}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{formData.description || "Brak opisu"}</p>
                 )}
               </div>
               
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{businessProfile?.address || "Brak adresu"}</span>
+                  <span className="text-sm">{formData.address || "Brak adresu"}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{businessProfile?.phone || "Brak telefonu"}</span>
+                  <span className="text-sm">{formData.phone || "Brak telefonu"}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{businessProfile?.email || "Brak emaila"}</span>
+                  <span className="text-sm">{formData.email || "Brak emaila"}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Globe className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{businessProfile?.website || "Brak strony"}</span>
+                  <span className="text-sm">{formData.website || "Brak strony"}</span>
                 </div>
               </div>
             </div>

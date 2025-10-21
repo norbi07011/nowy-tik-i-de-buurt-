@@ -133,19 +133,30 @@ export function AppProvider({ children }: AppProviderProps) {
 
   const loadBusinessProfile = async (businessId?: string): Promise<void> => {
     if (!currentUser || currentUser.accountType !== 'business') return
-    
+
     try {
       setIsLoading(true)
       const id = businessId || currentUser.id
-      const response = await apiService.getBusinessProfile(id)
-      
-      if (response.success && response.data) {
-        setBusinessProfile(response.data)
-      } else {
-        console.error('Failed to load business profile:', response.error)
+
+      console.log('🏢 Loading business profile from Supabase:', id)
+
+      const { data, error } = await supabase
+        .from('business_profiles')
+        .select('*')
+        .eq('user_id', id)
+        .single()
+
+      if (error) {
+        console.error('❌ Failed to load business profile:', error)
+        return
+      }
+
+      if (data) {
+        console.log('✅ Business profile loaded:', data)
+        setBusinessProfile(data as any)
       }
     } catch (error) {
-      console.error('Error loading business profile:', error)
+      console.error('❌ Error loading business profile:', error)
     } finally {
       setIsLoading(false)
     }
