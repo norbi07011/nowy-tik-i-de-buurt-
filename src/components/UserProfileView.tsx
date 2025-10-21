@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useKV } from "@/hooks/use-local-storage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,44 +7,68 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Camera, MapPin, Phone, Envelope } from "@phosphor-icons/react"
+import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AppContext"
 
 interface UserProfileViewProps {
   user: any
 }
 
 export function UserProfileView({ user }: UserProfileViewProps) {
+  const { setCurrentUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
-  const [users, setUsers] = useKV<any[]>("registered-users", [])
-  const [currentUser, setCurrentUser] = useKV<any>("current-user", null)
+  const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
+    name: user.name || "",
     email: user.email || "",
     phone: user.phone || "",
     city: user.city || "",
     bio: user.bio || ""
   })
 
-  const handleSave = () => {
-    // Update user in storage
-    const updatedUsers = users?.map((u: any) => 
-      u.id === user.id ? { ...u, ...formData } : u
-    ) || []
-    
-    setUsers(updatedUsers)
-    
-    // Update current user
-    const updatedUser = { ...user, ...formData }
-    setCurrentUser(updatedUser)
-    
-    setIsEditing(false)
-    toast.success("Profil został zaktualizowany")
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      console.log('💾 Saving profile to Supabase...', formData)
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          phone: formData.phone,
+          city: formData.city,
+          bio: formData.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Profile update error:', error)
+        toast.error(`Błąd podczas aktualizacji: ${error.message}`)
+        return
+      }
+
+      console.log('✅ Profile updated:', data)
+
+      // Update current user in context
+      const updatedUser = { ...user, ...formData }
+      setCurrentUser(updatedUser)
+
+      setIsEditing(false)
+      toast.success("Profil został zaktualizowany")
+    } catch (error) {
+      console.error('❌ Save error:', error)
+      toast.error("Błąd podczas zapisywania")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleCancel = () => {
     setFormData({
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
+      name: user.name || "",
       email: user.email || "",
       phone: user.phone || "",
       city: user.city || "",
@@ -96,11 +119,11 @@ export function UserProfileView({ user }: UserProfileViewProps) {
             </div>
             
             <h2 className="text-xl font-semibold">
-              {user.firstName} {user.lastName}
+              {user.name}
             </h2>
             <p className="text-muted-foreground flex items-center justify-center gap-1">
               <MapPin size={16} />
-              {user.city}
+              {user.city || 'Brak lokalizacji'}
             </p>
             
             <Separator className="my-4" />
@@ -128,25 +151,14 @@ export function UserProfileView({ user }: UserProfileViewProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Imię</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Nazwisko</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                    disabled={!isEditing}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">Imię i Nazwisko</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  disabled={!isEditing}
+                />
               </div>
 
               <div className="space-y-2">
