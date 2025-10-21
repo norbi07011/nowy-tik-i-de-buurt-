@@ -1,70 +1,85 @@
-import { useKV } from "@/hooks/use-local-storage"
 import { PostCard } from "@/components/PostCard"
 import { BusinessPost } from "@/types/business"
-import { generateMockPosts } from "@/lib/mockData"
+import { supabaseApi, Post as SupabasePost } from "@/lib/supabaseApi"
 import { useEffect, useState, useCallback } from "react"
-import { Heart } from "@phosphor-icons/react"
+import { Heart, BookmarkSimple } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
 export function SavedView() {
-  const [savedPosts, setSavedPosts] = useKV<string[]>("saved-posts", [])
-  const [likedPosts, setLikedPosts] = useKV<string[]>("liked-posts", [])
-  const [allPosts, setAllPosts] = useState<BusinessPost[]>([])
   const [savedPostsData, setSavedPostsData] = useState<BusinessPost[]>([])
   const [loading, setLoading] = useState(true)
 
+  const convertSupabasePostToBusinessPost = (post: SupabasePost): BusinessPost => {
+    const profile = post.profiles
+    const businessProfile = post.business_profiles
+    const media = post.post_media?.[0]
+
+    return {
+      id: post.id,
+      businessId: post.business_id || post.user_id,
+      businessName: businessProfile?.business_name || profile?.name || 'Unknown',
+      businessCategory: businessProfile?.category || 'General',
+      businessAvatar: businessProfile?.logo_image || profile?.profile_image || '',
+      title: post.title || '',
+      description: post.content,
+      imageUrl: media?.url || '',
+      location: post.location || post.city || '',
+      timestamp: new Date(post.created_at).toLocaleDateString('nl-NL'),
+      likes: post.likes_count,
+      comments: post.comments_count,
+      saves: post.saves_count,
+      views: post.views_count,
+      isLiked: false,
+      isSaved: true,
+      isVerified: businessProfile?.is_verified || false,
+      tags: post.tags || []
+    }
+  }
+
   useEffect(() => {
-    const mockPosts = generateMockPosts(20)
-    setAllPosts(mockPosts)
+    const loadSavedPosts = async () => {
+      setLoading(true)
+      try {
+        const supabasePosts = await supabaseApi.getSavedPosts()
+        const convertedPosts = supabasePosts.map(convertSupabasePostToBusinessPost)
+        setSavedPostsData(convertedPosts)
+      } catch (error) {
+        console.error('Error loading saved posts:', error)
+        toast.error('Błąd podczas ładowania zapisanych postów')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadSavedPosts()
   }, [])
 
-  useEffect(() => {
-    if (allPosts.length > 0) {
-      const savedData = allPosts
-        .filter(post => Array.isArray(savedPosts) ? savedPosts.includes(post.id) : false)
-        .map(post => ({
-          ...post,
-          isLiked: Array.isArray(likedPosts) ? likedPosts.includes(post.id) : false,
-          isSaved: true
-        }))
-      
-      setSavedPostsData(savedData)
-      setLoading(false)
-    }
-  }, [allPosts, savedPosts, likedPosts])
+  const handleLike = useCallback(async (postId: string) => {
+    const post = savedPostsData.find(p => p.id === postId)
+    if (!post) return
 
-  const handleLike = useCallback((postId: string) => {
-    setSavedPostsData(current => 
-      current.map(post => {
-        if (post.id === postId) {
-          const newIsLiked = !post.isLiked
+    const newIsLiked = !post.isLiked
+
+    setSavedPostsData(current =>
+      current.map(p => {
+        if (p.id === postId) {
           return {
-            ...post,
+            ...p,
             isLiked: newIsLiked,
-            likes: newIsLiked ? post.likes + 1 : post.likes - 1
+            likes: newIsLiked ? p.likes + 1 : p.likes - 1
           }
         }
-        return post
+        return p
       })
     )
 
-    setLikedPosts(current => {
-      const currentArray = Array.isArray(current) ? current : []
-      const newLikedPosts = currentArray.includes(postId)
-        ? currentArray.filter(id => id !== postId)
-        : [...currentArray, postId]
-      return newLikedPosts
-    })
-  }, [setLikedPosts])
+    await supabaseApi.likePost(postId)
+  }, [savedPostsData])
 
-  const handleSave = useCallback((postId: string) => {
-    setSavedPosts(current => {
-      const currentArray = Array.isArray(current) ? current : []
-      const newSavedPosts = currentArray.filter(id => id !== postId)
-      toast.success("Post removed from saved!")
-      return newSavedPosts
-    })
-  }, [setSavedPosts])
+  const handleSave = useCallback(async (postId: string) => {
+    setSavedPostsData(current => current.filter(p => p.id !== postId))
+    await supabaseApi.savePost(postId)
+  }, [])
 
   const handleComment = useCallback((postId: string) => {
     const post = savedPostsData.find(p => p.id === postId)

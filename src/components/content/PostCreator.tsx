@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useKV } from "@/hooks/use-local-storage"
+import { supabaseApi } from "@/lib/supabaseApi"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,7 +35,6 @@ interface PostCreatorProps {
 }
 
 export function PostCreator({ currentUser, onPostCreated, onClose }: PostCreatorProps) {
-  const [posts, setPosts] = useKV<any[]>("business-posts", [])
   
   const [formData, setFormData] = useState({
     type: "standard",
@@ -222,108 +221,36 @@ export function PostCreator({ currentUser, onPostCreated, onClose }: PostCreator
 
   const handleSubmit = async () => {
     if (!validateForm()) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      // Create post object
-      const newPost = {
-        id: Date.now().toString(),
-        businessId: currentUser.id,
-        businessName: currentUser.companyName || currentUser.name,
-        businessAvatar: currentUser.avatar,
-        category: currentUser.businessCategory || "other",
-        type: formData.type,
-        title: formData.title,
+      const postData = {
         content: formData.content,
-        media: formData.media.map((file, index) => ({
-          id: `${Date.now()}-${index}`,
-          url: URL.createObjectURL(file),
-          type: file.type.startsWith('image/') ? 'image' : 'video',
-          title: file.name,
-          size: file.size,
-          mimeType: file.type
-        })),
+        title: formData.title,
+        type: formData.type,
         location: formData.location,
         tags: formData.tags,
-        
-        // Price info
-        price: formData.hasPrice ? {
-          amount: parseFloat(formData.price) || 0,
-          currency: formData.currency,
-          isNegotiable: formData.isNegotiable
-        } : null,
-        
-        // Event details
-        eventDetails: formData.isEvent ? {
-          startDate: `${formData.eventDate}T${formData.eventTime}`,
-          endDate: formData.eventEndDate && formData.eventEndTime 
-            ? `${formData.eventEndDate}T${formData.eventEndTime}` 
-            : undefined,
-          location: formData.eventLocation,
-          capacity: formData.eventCapacity ? parseInt(formData.eventCapacity) : undefined,
-          price: formData.eventPrice ? {
-            amount: parseFloat(formData.eventPrice),
-            currency: "EUR",
-            isNegotiable: false
-          } : undefined,
-          isOnline: formData.isOnlineEvent
-        } : null,
-        
-        // Job details
-        jobDetails: formData.isJob ? {
-          position: formData.jobPosition,
-          type: formData.jobType,
-          salary: formData.jobSalaryMin || formData.jobSalaryMax ? {
-            min: formData.jobSalaryMin ? parseFloat(formData.jobSalaryMin) : undefined,
-            max: formData.jobSalaryMax ? parseFloat(formData.jobSalaryMax) : undefined,
-            currency: "EUR",
-            period: "month"
-          } : undefined,
-          requirements: formData.jobRequirements,
-          applicationDeadline: formData.jobDeadline || undefined
-        } : null,
-        
-        // Property details
-        propertyDetails: formData.isProperty ? {
-          type: formData.propertyType,
-          listingType: formData.propertyListingType,
-          price: {
-            amount: parseFloat(formData.propertyPrice),
-            currency: "EUR",
-            isNegotiable: formData.isNegotiable
-          },
-          size: parseFloat(formData.propertySize),
-          rooms: formData.propertyRooms ? parseInt(formData.propertyRooms) : undefined,
-          bathrooms: formData.propertyBathrooms ? parseInt(formData.propertyBathrooms) : undefined,
-          features: formData.propertyFeatures,
-          availableFrom: formData.propertyAvailableFrom || undefined
-        } : null,
-        
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        engagement: {
-          views: 0,
-          likes: 0,
-          comments: 0,
-          shares: 0,
-          saves: 0,
-          contacts: 0,
-          isLiked: false,
-          isSaved: false
-        },
-        isPromoted: formData.isPromoted,
-        expiresAt: formData.isPromotion && formData.promotionValidUntil 
-          ? new Date(formData.promotionValidUntil).toISOString() 
-          : undefined
+        price: formData.hasPrice ? parseFloat(formData.price) : undefined,
+        business_id: currentUser.accountType === 'business' ? currentUser.businessId : undefined
       }
-      
-      // Save post
-      const updatedPosts = [...(posts || []), newPost]
-      setPosts(updatedPosts)
-      
+
+      const createdPost = await supabaseApi.createPost(postData)
+
+      if (!createdPost) {
+        throw new Error('Failed to create post')
+      }
+
+      if (formData.media.length > 0) {
+        for (const file of formData.media) {
+          const fileUrl = URL.createObjectURL(file)
+          const mediaType = file.type.startsWith('image/') ? 'image' : 'video'
+          await supabaseApi.addPostMedia(createdPost.id, fileUrl, mediaType)
+        }
+      }
+
       toast.success("Post succesvol aangemaakt!")
-      onPostCreated(newPost)
+      onPostCreated(createdPost)
       onClose()
       
     } catch (error) {

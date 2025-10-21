@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react"
-import { useKV } from "@/hooks/use-local-storage"
 import { motion, AnimatePresence } from "framer-motion"
 import { PostCard } from "@/components/PostCard"
 import { BusinessPost } from "@/types/business"
-import { generateMockPosts } from "@/lib/mockData"
+import { supabaseApi, Post as SupabasePost } from "@/lib/supabaseApi"
 import { toast } from "sonner"
 
 const LoadingSpinner = () => (
@@ -41,30 +40,55 @@ const LoadingSpinner = () => (
 
 export function Feed() {
   const [posts, setPosts] = useState<BusinessPost[]>([])
-  const [likedPosts, setLikedPosts] = useKV<string[]>("liked-posts", [])
-  const [savedPosts, setSavedPosts] = useKV<string[]>("saved-posts", [])
   const [loading, setLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
   const feedRef = useRef<HTMLDivElement>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
+  const convertSupabasePostToBusinessPost = (post: SupabasePost): BusinessPost => {
+    const profile = post.profiles
+    const businessProfile = post.business_profiles
+    const media = post.post_media?.[0]
+
+    return {
+      id: post.id,
+      businessId: post.business_id || post.user_id,
+      businessName: businessProfile?.business_name || profile?.name || 'Unknown',
+      businessCategory: businessProfile?.category || 'General',
+      businessAvatar: businessProfile?.logo_image || profile?.profile_image || '',
+      title: post.title || '',
+      description: post.content,
+      imageUrl: media?.url || '',
+      location: post.location || post.city || '',
+      timestamp: new Date(post.created_at).toLocaleDateString('nl-NL'),
+      likes: post.likes_count,
+      comments: post.comments_count,
+      saves: post.saves_count,
+      views: post.views_count,
+      isLiked: false,
+      isSaved: false,
+      isVerified: businessProfile?.is_verified || false,
+      tags: post.tags || []
+    }
+  }
+
   useEffect(() => {
     const loadPosts = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1200))
-      
-      const mockPosts = generateMockPosts(20)
-      const postsWithInteractions = mockPosts.map(post => ({
-        ...post,
-        isLiked: Array.isArray(likedPosts) ? likedPosts.includes(post.id) : false,
-        isSaved: Array.isArray(savedPosts) ? savedPosts.includes(post.id) : false
-      }))
-      
-      setPosts(postsWithInteractions)
-      setLoading(false)
+      setLoading(true)
+      try {
+        const supabasePosts = await supabaseApi.getPosts(20, 0)
+        const convertedPosts = supabasePosts.map(convertSupabasePostToBusinessPost)
+        setPosts(convertedPosts)
+      } catch (error) {
+        console.error('Error loading posts:', error)
+        toast.error('Błąd podczas ładowania postów')
+      } finally {
+        setLoading(false)
+      }
     }
 
     loadPosts()
-  }, [likedPosts, savedPosts])
+  }, [])
 
   const updateCurrentIndex = useCallback(() => {
     if (!feedRef.current) return
@@ -104,60 +128,77 @@ export function Feed() {
     }
   }, [posts])
 
-  const handleLike = useCallback((postId: string) => {
-    setPosts(current => 
-      current.map(post => {
-        if (post.id === postId) {
-          const newIsLiked = !post.isLiked
+  const handleLike = useCallback(async (postId: string) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post) return
+
+    const newIsLiked = !post.isLiked
+
+    setPosts(current =>
+      current.map(p => {
+        if (p.id === postId) {
           return {
-            ...post,
+            ...p,
             isLiked: newIsLiked,
-            likes: newIsLiked ? post.likes + 1 : post.likes - 1
+            likes: newIsLiked ? p.likes + 1 : p.likes - 1
           }
         }
-        return post
+        return p
       })
     )
 
-    setLikedPosts(current => {
-      const currentArray = Array.isArray(current) ? current : []
-      const newLikedPosts = currentArray.includes(postId)
-        ? currentArray.filter(id => id !== postId)
-        : [...currentArray, postId]
-      return newLikedPosts
-    })
-  }, [setLikedPosts])
-
-  const handleSave = useCallback((postId: string) => {
-    setPosts(current => 
-      current.map(post => {
-        if (post.id === postId) {
-          const newIsSaved = !post.isSaved
-          return {
-            ...post,
-            isSaved: newIsSaved,
-            saves: newIsSaved ? post.saves + 1 : post.saves - 1
+    const result = await supabaseApi.likePost(postId)
+    if (result !== newIsLiked) {
+      setPosts(current =>
+        current.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              isLiked: result,
+              likes: result ? p.likes + 1 : p.likes - 1
+            }
           }
-        }
-        return post
-      })
-    )
-
-    setSavedPosts(current => {
-      const currentArray = Array.isArray(current) ? current : []
-      const newSavedPosts = currentArray.includes(postId)
-        ? currentArray.filter(id => id !== postId)
-        : [...currentArray, postId]
-      
-      if (!currentArray.includes(postId)) {
-        toast.success("Post zapisany!", {
-          description: "Znajdziesz go w sekcji Zapisane"
+          return p
         })
-      }
-      
-      return newSavedPosts
-    })
-  }, [setSavedPosts])
+      )
+    }
+  }, [posts])
+
+  const handleSave = useCallback(async (postId: string) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post) return
+
+    const newIsSaved = !post.isSaved
+
+    setPosts(current =>
+      current.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            isSaved: newIsSaved,
+            saves: newIsSaved ? p.saves + 1 : p.saves - 1
+          }
+        }
+        return p
+      })
+    )
+
+    const result = await supabaseApi.savePost(postId)
+    if (result !== newIsSaved) {
+      setPosts(current =>
+        current.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              isSaved: result,
+              saves: result ? p.saves + 1 : p.saves - 1
+            }
+          }
+          return p
+        })
+      )
+    }
+  }, [posts])
 
   const handleComment = useCallback((postId: string) => {
     const post = posts.find(p => p.id === postId)
