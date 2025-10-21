@@ -1,5 +1,4 @@
 import { useState, useRef } from "react"
-import { useKV } from "@/hooks/use-local-storage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,14 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { 
-  Camera, 
-  MapPin, 
-  Phone, 
-  Envelope, 
-  PencilSimple, 
-  Heart, 
-  Star, 
+import {
+  Camera,
+  MapPin,
+  Phone,
+  Envelope,
+  PencilSimple,
+  Heart,
+  Star,
   Users,
   Calendar,
   Gear,
@@ -30,7 +29,8 @@ import {
   UserPlus
 } from "@phosphor-icons/react"
 import { User, BusinessProfile } from "@/types"
-import { useSampleBusinesses } from "@/hooks/use-sample-businesses"
+import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AppContext"
 import tikLogo from "@/assets/images/tik-logo.svg"
 
 interface ModernProfileViewProps {
@@ -39,78 +39,116 @@ interface ModernProfileViewProps {
 }
 
 export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
+  const { setCurrentUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
-  const [users, setUsers] = useKV<User[]>("registered-users", [])
-  const [currentUser, setCurrentUser] = useKV<User>("current-user", user)
-  const { favoriteBusinesses, setFavoriteBusinesses } = useSampleBusinesses()
-  const [savedPosts] = useKV<string[]>("saved-posts", [])
-  const [likedPosts] = useKV<string[]>("liked-posts", [])
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
   const [formData, setFormData] = useState({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
+    name: user.name || "",
     email: user.email || "",
-    phone: user.phone || user.phoneNumber || "",
-    city: user.city || user.location || "",
-    bio: user.bio || "",
-    interests: user.interests || []
+    phone: user.phone || "",
+    city: user.city || "",
+    bio: user.bio || ""
   })
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Zdjęcie jest zbyt duże. Maksymalny rozmiar to 5MB.")
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Zdjęcie jest zbyt duże. Maksymalny rozmiar to 5MB.")
+      return
+    }
+
+    try {
+      console.log('📤 Uploading profile image...')
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `avatar-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError)
+        toast.error('Błąd podczas przesyłania zdjęcia')
         return
       }
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const imageDataUrl = e.target?.result as string
-        const updatedUser = { ...currentUser, profileImage: imageDataUrl, avatar: imageDataUrl }
-        setCurrentUser(updatedUser)
-        
-        // Update in users array
-        setUsers((prev) => 
-          (prev || []).map((u) => 
-            u.id === user.id ? updatedUser : u
-          )
-        )
-        
-        toast.success("Zdjęcie profilowe zostało zaktualizowane!")
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      // Update profile in database
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_image: publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('❌ Update error:', updateError)
+        toast.error('Błąd podczas aktualizacji profilu')
+        return
       }
-      reader.readAsDataURL(file)
+
+      console.log('✅ Profile image updated')
+      setCurrentUser({ ...user, profileImage: publicUrl })
+      toast.success("Zdjęcie profilowe zostało zaktualizowane!")
+    } catch (error) {
+      console.error('❌ Image upload error:', error)
+      toast.error('Błąd podczas przesyłania zdjęcia')
     }
   }
 
-  const handleSave = () => {
-    const updatedUser = { 
-      ...currentUser, 
-      ...formData,
-      name: `${formData.firstName} ${formData.lastName}`.trim()
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      console.log('💾 Saving profile to Supabase...', formData)
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          phone: formData.phone,
+          city: formData.city,
+          bio: formData.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Profile update error:', error)
+        toast.error(`Błąd podczas aktualizacji: ${error.message}`)
+        return
+      }
+
+      console.log('✅ Profile updated:', data)
+      const updatedUser = { ...user, ...formData }
+      setCurrentUser(updatedUser)
+      setIsEditing(false)
+      toast.success("Profil został zaktualizowany!")
+    } catch (error) {
+      console.error('❌ Save error:', error)
+      toast.error('Błąd podczas zapisywania')
+    } finally {
+      setIsSaving(false)
     }
-    
-    setCurrentUser(updatedUser)
-    setUsers((prev) => 
-      (prev || []).map((u) => 
-        u.id === user.id ? updatedUser : u
-      )
-    )
-    
-    setIsEditing(false)
-    toast.success("Profil został zaktualizowany!")
   }
 
   const handleCancel = () => {
     setFormData({
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
+      name: user.name || "",
       email: user.email || "",
-      phone: user.phone || user.phoneNumber || "",
-      city: user.city || user.location || "",
-      bio: user.bio || "",
-      interests: user.interests || []
+      phone: user.phone || "",
+      city: user.city || "",
+      bio: user.bio || ""
     })
     setIsEditing(false)
   }
