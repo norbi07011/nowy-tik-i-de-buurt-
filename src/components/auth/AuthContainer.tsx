@@ -23,10 +23,12 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
   }
 
   const handleSwitchToUserRegister = () => {
+    console.log('🔵 AuthContainer: Przełączanie na rejestrację użytkownika')
     setAuthMode("register-user")
   }
 
   const handleSwitchToBusinessRegister = () => {
+    console.log('🟣 AuthContainer: Przełączanie na rejestrację biznesu')
     setAuthMode("register-business")
   }
 

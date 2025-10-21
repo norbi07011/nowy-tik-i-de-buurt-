@@ -168,7 +168,7 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
       </motion.div>
 
       {/* Registration Options */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -176,8 +176,13 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
       >
         <motion.button
           type="button"
-          onClick={onSwitchToUserRegister}
-          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            console.log('🔵 Kliknięto przycisk Użytkownik')
+            onSwitchToUserRegister()
+          }}
+          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group cursor-pointer"
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -195,8 +200,13 @@ export function LoginForm({ onLogin, onSwitchToUserRegister, onSwitchToBusinessR
 
         <motion.button
           type="button"
-          onClick={onSwitchToBusinessRegister}
-          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            console.log('🟣 Kliknięto przycisk Biznes')
+            onSwitchToBusinessRegister()
+          }}
+          className="flex items-center justify-center gap-3 p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-slate-800 transition-all duration-300 group cursor-pointer"
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
         >
