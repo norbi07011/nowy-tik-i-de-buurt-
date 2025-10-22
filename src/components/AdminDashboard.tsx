@@ -45,7 +45,7 @@ import { MarketingServicesView } from "@/components/MarketingServicesView"
 import { SupportView } from "@/components/SupportView"
 import { PaymentsPanel } from "@/components/business/PaymentsPanel"
 import { CustomerEngagement } from "@/components/business/CustomerEngagement"
-import tikLogo from "@/assets/images/tik-logo.svg"
+const tikLogo = "/Zdjęcie WhatsApp 2025-10-15 o 02.37.04_f6d57835.jpg"
 
 type SidebarItem = {
   id: string
@@ -154,7 +154,7 @@ export function AdminDashboard({ currentUser, onLogout }: AdminDashboardProps) {
             <img 
               src={tikLogo} 
               alt="Tik in de Buurt" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover rounded-xl"
             />
           </div>
           <div>

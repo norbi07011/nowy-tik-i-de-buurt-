@@ -31,7 +31,7 @@ import {
 import { User, BusinessProfile } from "@/types"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AppContext"
-import tikLogo from "@/assets/images/tik-logo.svg"
+const tikLogo = "/Zdjęcie WhatsApp 2025-10-15 o 02.37.04_f6d57835.jpg"
 
 interface ModernProfileViewProps {
   user: User
@@ -196,7 +196,7 @@ export function ModernProfileView({ user, onLogout }: ModernProfileViewProps) {
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={tikLogo} alt="Tik in de Buurt" className="w-8 h-8" />
+            <img src={tikLogo} alt="Tik in de Buurt" className="w-8 h-8 object-cover rounded-lg" />
             <h1 className="text-xl font-bold">Mój Profil</h1>
           </div>
           <div className="flex items-center gap-2">

@@ -38,7 +38,7 @@ import { RealEstateView } from "./RealEstateView"
 import { WorkersView } from "./WorkersView"
 import { SearchView } from "./SearchView"
 import { UserSavedView } from "./UserSavedView"
-import tikLogo from "@/assets/images/tik-logo.svg"
+const tikLogo = "/Zdjęcie WhatsApp 2025-10-15 o 02.37.04_f6d57835.jpg"
 
 type SidebarItem = {
   id: string
@@ -156,7 +156,7 @@ export function UserDashboard({ user, onLogout }: UserDashboardProps) {
               <img 
                 src={tikLogo} 
                 alt="Tik in de Buurt" 
-                className="w-full h-full object-contain relative z-10"
+                className="w-full h-full object-cover relative z-10 rounded-xl"
               />
             </div>
           </motion.div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { LoginForm } from "./LoginForm"
 import { UserRegistrationForm } from "./UserRegistrationForm"
 import { BusinessRegistrationForm } from "./BusinessRegistrationForm"
-import tikLogo from "@/assets/images/tik-logo.svg"
+const tikLogo = "/Zdjęcie WhatsApp 2025-10-15 o 02.37.04_f6d57835.jpg"
 
 type AuthMode = "login" | "register-user" | "register-business"
 
@@ -192,7 +192,7 @@ export function AuthContainer({ onAuthSuccess }: AuthContainerProps) {
             <img 
               src={tikLogo} 
               alt="Tik in de Buurt" 
-              className="w-12 h-12 object-contain relative z-10"
+              className="w-16 h-16 object-cover relative z-10 rounded-2xl"
             />
           </motion.div>
 
